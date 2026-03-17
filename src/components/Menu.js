@@ -119,7 +119,7 @@ const Menu = () => {
   const menuData = {
     mar: [
       ["Caldo de Bolas de verde", "$6.00"],
-      ["Encobollado", "$3.00"],
+      ["Encebollado", "$3.00"],
       ["Viche de Pescado", "$6.50"],
       ["Camarones Apanados", "$6.80"],
       ["Salpicón Mariscos mix (pescado, camarón, calamari)", "$6.50"],
