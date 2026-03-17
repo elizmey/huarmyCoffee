@@ -122,7 +122,7 @@ const Menu = () => {
       ["Encebollado", "$3.00"],
       ["Viche de Pescado", "$6.50"],
       ["Camarones Apanados", "$6.80"],
-      ["Salpicón Mariscos mix (pescado, camarón, calamari)", "$6.50"],
+      ["Salpicón Mariscos mix (pescado, camarón, calamar)", "$6.50"],
       ["Encocado de camarón", "$6.50"],
       ["Ceviche Pescado", "$5.50"],
       ["Ceviche de Camarón", "$6.50"]
