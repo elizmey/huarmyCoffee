@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Coffee, Heart, Leaf } from "lucide-react";
 import "../assets/css/style.css";// o importa desde assets/css/style.css si lo prefieres global
 
-const About = () => {
+const Nosotros = () => {
   return (
     <section id="nosotros" className="about-section">
       <div className="container">
@@ -91,4 +91,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default Nosotros;
