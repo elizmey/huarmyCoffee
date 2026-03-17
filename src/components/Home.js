@@ -4,11 +4,11 @@ import "../assets/css/style.css"; // Si ya es global, puedes quitar esta línea
 
 function Home() {
   return (
-    <section className="premium-hero">
+    <section id="inicio" className="premium-hero">
       <div className="hero-background">
         <img
           src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&auto=format&fit=crop&q=90" // Fondo premium café (cambia por tu imagen real)
-          alt="Huarmi Coffee ambiance"
+          alt="Huarmy Coffee ambiance"
           className="hero-bg-image"
         />
         <div className="hero-overlay" />
@@ -53,6 +53,25 @@ function Home() {
           </a>
         </motion.div>
       </motion.div>
+      <motion.p
+        className="hero-location"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.4, duration: 0.8 }}
+      >
+        📍 Av. Equinoccial &, Quito | 🕒 8:00 AM - 5:30 PM
+      </motion.p>
+
+      <motion.a
+        href="https://maps.app.goo.gl/WG4iwtVRR4SGeD3f6"
+        target="_blank"
+        className="btn-maps"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.6 }}
+      >
+        Cómo llegar
+      </motion.a>
     </section>
   );
 }

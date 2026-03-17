@@ -108,16 +108,6 @@
   cursor: pointer;
 }
 
-/* Estilo anterior de tarjeta simple (lo mantengo por si lo usas en otra sección) */
-#menu div {
-  display: flex;
-  justify-content: space-between;
-  max-width: 400px;
-  margin: 10px auto;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
 /* TITULOS GENERALES */
 h2 {
   font-size: 2.5rem;
