@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Coffee, Heart, Leaf } from "lucide-react";
 import "../assets/css/style.css";// o importa desde assets/css/style.css si lo prefieres global
 
-const About = () => {
+const Nosotros = () => {
   return (
     <section id="nosotros" className="about-section">
       <div className="container">
@@ -23,7 +23,11 @@ const About = () => {
             </h2>
 
             <p className="about-description">
-              Huarmi Coffee nació de la pasión por el café de especialidad y el deseo de crear un espacio donde cada visita sea memorable. Nuestro nombre, "Huarmi", celebra la fuerza y calidez que ponemos en cada detalle — desde la selección del grano hasta la última gota en tu taza.
+              Huarmy Coffee Restaurant nace de la pasión por la cocina tradicional ecuatoriana,
+              bajo la dirección de la Chef Administradora Verónica Rivera y Francisco Rivera.
+              "El sabor de la memoria..." es nuestra filosofía: cada plato revive las recetas
+              de nuestras abuelas, preparadas con ingredientes frescos y mucho amor.
+              Somos un espacio familiar donde la tradición y el sabor se encuentran.
             </p>
 
             <div className="highlights">
@@ -87,4 +91,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default Nosotros;

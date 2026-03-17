@@ -108,16 +108,6 @@
   cursor: pointer;
 }
 
-/* Estilo anterior de tarjeta simple (lo mantengo por si lo usas en otra sección) */
-#menu div {
-  display: flex;
-  justify-content: space-between;
-  max-width: 400px;
-  margin: 10px auto;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
 /* TITULOS GENERALES */
 h2 {
   font-size: 2.5rem;
@@ -1119,3 +1109,168 @@ h2 {
     padding: 28px 20px;
   }
 }
+
+/* ===== SECCIÓN DE CLIENTES - VERSIÓN GRANDE ===== */
+.clients-section-large {
+  padding: 120px 20px;
+  background: linear-gradient(135deg, #fdf8f5 0%, #f9f1ea 100%);
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+.clients-container-large {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.clients-header-large {
+  margin-bottom: 80px;
+}
+
+.clients-header-large .section-label {
+  font-size: 1.2rem;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #b08968;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.section-title-large {
+  font-size: 4.5rem;
+  font-weight: 800;
+  color: #2c1a0f;
+  margin: 0 0 25px;
+  line-height: 1.1;
+}
+
+.section-title-large span {
+  color: #d4a373;
+  font-size: 5rem;
+}
+
+.section-subtitle-large {
+  font-size: 1.5rem;
+  color: #5c4033;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.clients-grid-large {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 50px;
+  padding: 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.client-card-large {
+  background: white;
+  border-radius: 50% 50% 30px 30px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(44, 26, 15, 0.15);
+  cursor: pointer;
+  transition: all 0.4s ease;
+  border: 4px solid #d4a373;
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.client-image-large {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.client-image-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.client-card-large:hover .client-image-large img {
+  transform: scale(1.15);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .clients-grid-large {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+  
+  .section-title-large {
+    font-size: 3.5rem;
+  }
+  
+  .section-title-large span {
+    font-size: 4rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .clients-grid-large {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    padding: 20px;
+  }
+  
+  .section-title-large {
+    font-size: 2.8rem;
+  }
+  
+  .section-title-large span {
+    font-size: 3.2rem;
+  }
+  
+  .section-subtitle-large {
+    font-size: 1.2rem;
+    padding: 0 20px;
+  }
+  
+  .client-card-large {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .clients-grid-large {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .client-card-large {
+    max-width: 300px;
+  }
+}
+
+/* ===== AJUSTES DE ESPACIADO ENTRE SECCIONES ===== */
+.clients-section-large {
+  padding: 60px 20px 40px !important;  /* Reduce padding superior e inferior */
+  margin-bottom: 0 !important;
+}
+
+.gallery-section {
+  padding: 40px 20px 60px !important;  /* Ajusta padding de galería */
+  margin-top: 0 !important;
+}
+
+/* Si quieres aún menos espacio, usa esta versión */
+.clients-section-large {
+  padding: 40px 20px 20px !important;
+}
+
+.gallery-section {
+  padding: 20px 20px 40px !important;
+}
+

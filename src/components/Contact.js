@@ -4,19 +4,20 @@ import { MapPin, Phone, Mail, Clock, Instagram, Facebook } from "lucide-react";
 import "../assets/css/style.css";
 
 const contactInfo = [
-  { icon: MapPin, label: "Dirección", value: "Av. Equinoccial, Quito" },
+  { icon: MapPin, label: "Dirección", value: "Av. Equinoccial &, Quito" },
   { icon: Phone, label: "Teléfono", value: "0983436356" },
-  { icon: Mail, label: "Email", value: "hola@huarmicoffee.com" },
+  { icon: Phone, label: "Local", value: "025185964" },
+  { icon: Mail, label: "Email", value: "huarmycoffee@gmail.com" },
   {
     icon: Clock,
     label: "Horarios",
-    value: "Lun - Sáb: 7:00 - 21:00 | Dom: 8:00 - 18:00",
+    value: "Lunes a Domingo: 8:00 - 17:30",
   },
 ];
 
 const Contact = () => {
   return (
-    <section id="contacto" className="contact-section">
+    <section id="contact" className="contact-section">
       <div className="container">
         <div className="grid-2-cols">
           {/* Izquierda - Información */}
