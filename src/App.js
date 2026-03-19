@@ -7,6 +7,7 @@ import Contact from './components/Contact';
 import Testimonials from "./components/Testimonials";
 import Gallery from './components/Gallery';
 import Nosotros from './components/Nosotros';
+import Ubicacion from './components/Ubicacion';
 
 function App() {
   const [showHeader, setShowHeader] = useState(true);
@@ -86,7 +87,7 @@ function App() {
             onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
           />
           <nav style={headerStyles.nav}>
-            {['inicio', 'menu', 'nosotros', 'contact'].map((item) => (
+            {['inicio', 'menu', 'nosotros', 'ubicacion', 'contact'].map((item) => (
               <a
                 key={item}
                 href={`#${item}`}

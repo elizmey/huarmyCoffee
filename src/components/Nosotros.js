@@ -62,13 +62,6 @@ const Nosotros = () => {
               </div>
             </div>
 
-            {/* Badge de experiencia */}
-            <div className="experience-badge">
-              <div className="badge-inner">
-                <span className="years">5+</span>
-                <span className="label">Años de experiencia</span>
-              </div>
-            </div>
           </motion.div>
 
           {/* Columna derecha - Imagen */}

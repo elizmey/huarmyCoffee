@@ -31,7 +31,7 @@ const Contact = () => {
             <h2 className="title-big">Visítanos Hoy</h2>
 
             <p className="text-soft">
-              Te esperamos con una taza recién preparada. Ven a descubrir por qué Huarmi Coffee es el lugar favorito de nuestra comunidad.
+              Te esperamos con una taza recién preparada. Ven a descubrir por qué Huarmy Coffee es el lugar favorito de nuestra comunidad.
             </p>
 
             <div>

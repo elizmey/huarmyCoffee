@@ -2,7 +2,7 @@ import React from "react";
 import "../assets/css/style.css";
 
 function Gallery() {
-  const lugarImages = [
+  const images = [
     { src: "/imagenes/local/lugar1.jpg", alt: "Interior del café" },
     { src: "/imagenes/local/lugar2.jpg", alt: "Ambiente acogedor" },
     { src: "/imagenes/local/lugar3.jpg", alt: "Mesas y decoración" },
@@ -11,26 +11,29 @@ function Gallery() {
     { src: "/imagenes/local/lugar6.jpg", alt: "Espacio familiar" },
   ];
 
+  const extendedImages = [...images, ...images];
+
   return (
     <section id="galeria" className="gallery-section">
       <div className="gallery-container">
-        <span className="gallery-label">GALERÍA</span>
         <h2 className="gallery-title">Nuestro Espacio</h2>
         <p className="gallery-description">
-          Un rincón cálido donde el café y la buena compañía se encuentran ☕
+          Un rincón cálido donde el café y la buena compañía se encuentran
         </p>
 
-        <div className="gallery-grid">
-          {lugarImages.map((image, index) => (
-            <div key={index} className="gallery-item">
-              <img
-                src={image.src}
-                alt={image.alt}
-                className="gallery-img"
-                loading="lazy"
-              />
-            </div>
-          ))}
+        <div className="carousel-wrapper">
+          <div className="carousel-track">
+            {extendedImages.map((img, idx) => (
+              <div key={idx} className="carousel-item">
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="carousel-image"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -1,19 +1,20 @@
 import React from "react";
 import { motion } from "framer-motion";
-import "../assets/css/style.css"; // Si ya es global, puedes quitar esta línea
+import "../assets/css/style.css";
 
 function Home() {
   return (
     <section id="inicio" className="premium-hero">
       <div className="hero-background">
         <img
-          src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&auto=format&fit=crop&q=90" // Fondo premium café (cambia por tu imagen real)
+          src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&auto=format&fit=crop&q=90"
           alt="Huarmy Coffee ambiance"
           className="hero-bg-image"
         />
         <div className="hero-overlay" />
       </div>
 
+      {/* 🔥 TODO el contenido centrado */}
       <motion.div
         className="hero-content"
         initial={{ opacity: 0, y: 40 }}
@@ -26,7 +27,7 @@ function Home() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4, duration: 1 }}
         >
-          Huarmi <span>Coffee</span>
+          Huarmy <span>Coffee</span>
         </motion.h1>
 
         <motion.p
@@ -52,26 +53,21 @@ function Home() {
             Nuestra Historia
           </a>
         </motion.div>
-      </motion.div>
-      <motion.p
-        className="hero-location"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: 0.8 }}
-      >
-        📍 Av. Equinoccial &, Quito | 🕒 8:00 AM - 5:30 PM
-      </motion.p>
 
-      <motion.a
-        href="https://maps.app.goo.gl/WG4iwtVRR4SGeD3f6"
-        target="_blank"
-        className="btn-maps"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.6 }}
-      >
-        Cómo llegar
-      </motion.a>
+        {/* 🔥 MOVIDO AQUÍ */}
+        <motion.p
+          className="hero-location"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.8 }}
+        >
+          📍 Av. Equinoccial &, Quito | 🕒 8:00 AM - 5:30 PM
+        </motion.p>
+
+       <a href="/ubicacion" className="btn-maps">
+        Ver ubicación
+</a>
+      </motion.div>
     </section>
   );
 }

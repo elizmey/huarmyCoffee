@@ -1,113 +1,88 @@
-import React from "react";
+import React, { useState } from "react";
 
 const Menu = () => {
+
+  const [activeCategory, setActiveCategory] = useState("mar");
+
   const styles = {
     section: {
-      padding: "60px 20px",
-      background: "linear-gradient(135deg, #fdf8f5 0%, #f9f1ea 100%)",
+      padding: "70px 20px",
+      background: "linear-gradient(135deg, #fdf8f5 0%, #f3e9e2 100%)",
       minHeight: "100vh"
     },
     container: {
-      maxWidth: "900px",
+      maxWidth: "950px",
       margin: "0 auto",
       fontFamily: "'Poppins', 'Arial', sans-serif"
     },
     header: {
       textAlign: "center",
-      marginBottom: "50px"
+      marginBottom: "60px"
     },
     title: {
-      fontSize: "42px",
-      color: "#4a3729",
+      fontSize: "44px",
+      color: "#3b2a1f",
       margin: "0 0 10px 0",
-      fontWeight: "600",
-      letterSpacing: "-0.5px",
-      textShadow: "2px 2px 4px rgba(0,0,0,0.05)"
+      fontWeight: "700",
+      letterSpacing: "-0.5px"
     },
     subtitle: {
       fontSize: "18px",
       color: "#b17f5a",
       margin: "0",
-      fontStyle: "italic",
-      position: "relative",
-      display: "inline-block"
-    },
-    subtitleLine: {
-      content: "''",
-      position: "absolute",
-      bottom: "-10px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "60px",
-      height: "2px",
-      background: "#d4a373"
+      fontStyle: "italic"
     },
     category: {
       marginBottom: "45px",
-      background: "white",
-      borderRadius: "16px",
+      background: "rgba(255,255,255,0.85)", // 🔥 más premium
+      backdropFilter: "blur(8px)", // 🔥 glass effect
+      borderRadius: "18px",
       padding: "30px",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-      transition: "transform 0.3s ease",
-      border: "1px solid rgba(212, 163, 115, 0.1)"
+      boxShadow: "0 15px 35px rgba(0,0,0,0.08)",
+      border: "1px solid rgba(212, 163, 115, 0.2)",
+      transition: "all 0.3s ease"
     },
     categoryTitle: {
-      fontSize: "28px",
+      fontSize: "26px",
       color: "#4a3729",
-      margin: "0 0 25px 0",
-      paddingBottom: "12px",
-      borderBottom: "3px solid #d4a373",
+      margin: "0 0 20px 0",
+      paddingBottom: "10px",
+      borderBottom: "2px solid #d4a373",
       textTransform: "uppercase",
       letterSpacing: "2px",
-      fontWeight: "600",
-      position: "relative"
-    },
-    categoryTitleAccent: {
-      position: "absolute",
-      bottom: "-3px",
-      left: "0",
-      width: "60px",
-      height: "3px",
-      background: "#b17f5a"
+      fontWeight: "600"
     },
     itemsContainer: {
       display: "grid",
-      gap: "12px"
+      gap: "10px"
     },
     item: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: "12px 0",
+      padding: "12px 10px",
+      borderRadius: "10px",
       borderBottom: "1px dashed #e8d9cc",
-      transition: "background 0.2s ease",
-      cursor: "default"
-    },
-    itemHover: {
-      background: "#fdf8f5"
+      transition: "all 0.25s ease"
     },
     itemName: {
       color: "#5c4a3a",
       fontSize: "17px",
-      fontWeight: "500",
-      lineHeight: "1.4"
+      fontWeight: "500"
     },
     itemPrice: {
-      color: "#b17f5a",
-      fontSize: "20px",
-      fontWeight: "700",
-      whiteSpace: "nowrap",
-      marginLeft: "20px",
-      background: "#f9f1ea",
-      padding: "4px 12px",
-      borderRadius: "20px",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+      color: "#fff",
+      fontSize: "15px",
+      fontWeight: "600",
+      background: "linear-gradient(135deg, #b17f5a, #d4a373)",
+      padding: "5px 14px",
+      borderRadius: "20px"
     },
     specialNote: {
       textAlign: "center",
-      marginTop: "40px",
+      marginTop: "50px",
       padding: "20px",
-      background: "rgba(212, 163, 115, 0.1)",
+      background: "rgba(212, 163, 115, 0.15)",
       borderRadius: "12px",
       color: "#6b4f3a",
       fontSize: "15px",
@@ -167,97 +142,44 @@ const Menu = () => {
   };
 
   return (
-    <section id="menu" style={styles.section}>
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>Nuestro Menú</h1>
-          <p style={styles.subtitle}>"El sabor de la memoria..."</p>
-        </div>
+  <section id="menu" style={styles.section}>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Nuestro Menú</h1>
+        <p style={styles.subtitle}>"El sabor de la memoria..."</p>
 
-        {/* MAR */}
-        <div style={styles.category}>
-          <h2 style={styles.categoryTitle}>MAR</h2>
-          <div style={styles.itemsContainer}>
-            {menuData.mar.map(([name, price], i) => (
-              <div key={i} style={styles.item}>
-                <span style={styles.itemName}>{name}</span>
-                <span style={styles.itemPrice}>{price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* SIERRA */}
-        <div style={styles.category}>
-          <h2 style={styles.categoryTitle}>SIERRA</h2>
-          <div style={styles.itemsContainer}>
-            {menuData.sierra.map(([name, price], i) => (
-              <div key={i} style={styles.item}>
-                <span style={styles.itemName}>{name}</span>
-                <span style={styles.itemPrice}>{price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* POSTRES */}
-        <div style={styles.category}>
-          <h2 style={styles.categoryTitle}>POSTRES</h2>
-          <div style={styles.itemsContainer}>
-            {menuData.postres.map(([name, price], i) => (
-              <div key={i} style={styles.item}>
-                <span style={styles.itemName}>{name}</span>
-                <span style={styles.itemPrice}>{price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* DESAYUNOS */}
-        <div style={styles.category}>
-          <h2 style={styles.categoryTitle}>DESAYUNOS</h2>
-          <div style={styles.itemsContainer}>
-            {menuData.desayunos.map(([name, price], i) => (
-              <div key={i} style={styles.item}>
-                <span style={styles.itemName}>{name}</span>
-                <span style={styles.itemPrice}>{price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* BEBIDAS CALIENTES */}
-        <div style={styles.category}>
-          <h2 style={styles.categoryTitle}>BEBIDAS CALIENTES</h2>
-          <div style={styles.itemsContainer}>
-            {menuData.calientes.map(([name, price], i) => (
-              <div key={i} style={styles.item}>
-                <span style={styles.itemName}>{name}</span>
-                <span style={styles.itemPrice}>{price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* BEBIDAS FRÍAS */}
-        <div style={styles.category}>
-          <h2 style={styles.categoryTitle}>BEBIDAS FRÍAS</h2>
-          <div style={styles.itemsContainer}>
-            {menuData.frias.map(([name, price], i) => (
-              <div key={i} style={styles.item}>
-                <span style={styles.itemName}>{name}</span>
-                <span style={styles.itemPrice}>{price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={styles.specialNote}>
-          🍽️ Todos nuestros platos son preparados al momento con ingredientes frescos y recetas tradicionales
+        <div className="menu-tabs">
+          <button className={activeCategory === "mar" ? "active" : ""} onClick={() => setActiveCategory("mar")}>MAR</button>
+          <button className={activeCategory === "sierra" ? "active" : ""} onClick={() => setActiveCategory("sierra")}>SIERRA</button>
+<button className={activeCategory === "postres" ? "active" : ""} onClick={() => setActiveCategory("postres")}>POSTRES</button>
+<button className={activeCategory === "desayunos" ? "active" : ""} onClick={() => setActiveCategory("desayunos")}>DESAYUNOS</button>
+<button className={activeCategory === "calientes" ? "active" : ""} onClick={() => setActiveCategory("calientes")}>CALIENTES</button>
+<button className={activeCategory === "frias" ? "active" : ""} onClick={() => setActiveCategory("frias")}>FRÍAS</button>
         </div>
       </div>
-    </section>
-  );
-};
+
+      {/* CONTENIDO DINÁMICO */}
+      <div style={styles.category} className="menu-card">
+        <h2 style={styles.categoryTitle}>
+          {activeCategory.toUpperCase()}
+        </h2>
+
+        <div style={styles.itemsContainer}>
+          {menuData[activeCategory].map(([name, price], i) => (
+            <div key={i} style={styles.item} className="menu-item">
+              <span style={styles.itemName}>{name}</span>
+              <span style={styles.itemPrice}>{price}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={styles.specialNote}>
+        🍽️ Todos nuestros platos son preparados al momento con ingredientes frescos y recetas tradicionales
+      </div>
+    </div>
+  </section>
+);
+}
 
 export default Menu;
