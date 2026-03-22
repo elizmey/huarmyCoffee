@@ -41,8 +41,8 @@ const Contact = () => {
                     <item.icon />
                   </div>
                   <div>
-                    <p className="font-medium text-[#f5e8d3]">{item.label}</p>
-                    <p className="text-[#d9c2a6] text-sm mt-1">{item.value}</p>
+                    <p className="contact-item-label">{item.label}</p>
+                    <p className="contact-item-value">{item.value}</p>
                   </div>
                 </div>
               ))}
@@ -57,7 +57,12 @@ const Contact = () => {
               >
                 <Instagram />
               </a>
-              <a href="#" className="social-link">
+              <a
+                href="https://www.facebook.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link"
+              >
                 <Facebook />
               </a>
             </div>

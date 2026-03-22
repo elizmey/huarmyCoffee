@@ -64,7 +64,7 @@ function Home() {
           📍 Av. Equinoccial &, Quito | 🕒 8:00 AM - 5:30 PM
         </motion.p>
 
-       <a href="/ubicacion" className="btn-maps">
+       <a href="#ubicacion" className="btn-maps">
         Ver ubicación
 </a>
       </motion.div>

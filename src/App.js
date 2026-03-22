@@ -105,7 +105,7 @@ function App() {
               >
                 {item === 'inicio' ? 'Inicio' : 
                  item === 'menu' ? 'Menú' : 
-                 item === 'nosotros' ? 'Nuestra Historia' : 'Contacto'}
+                 item === 'nosotros' ? 'Nuestra Historia' : item === 'ubicacion' ? 'Ubicación' : 'Contacto'}
               </a>
             ))}
           </nav>
@@ -120,6 +120,7 @@ function App() {
       <Nosotros />
       <Testimonials />
       <Gallery />
+      <Ubicacion />
       <Contact />
 
       <footer style={{ 

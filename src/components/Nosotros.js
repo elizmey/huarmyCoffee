@@ -1,14 +1,13 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Coffee, Heart, Leaf } from "lucide-react";
-import "../assets/css/style.css";// o importa desde assets/css/style.css si lo prefieres global
+import "../assets/css/style.css";
 
 const Nosotros = () => {
   return (
     <section id="nosotros" className="about-section">
       <div className="container">
         <div className="grid-about">
-          {/* Columna izquierda - Texto */}
           <motion.div
             className="about-content"
             initial={{ opacity: 0, x: -60 }}
@@ -18,53 +17,61 @@ const Nosotros = () => {
           >
             <p className="section-label">NUESTRA HISTORIA</p>
             <h2 className="about-title">
-              Más que café,<br />
+              Más que café,
+              <br />
               <span>una experiencia</span>
             </h2>
 
             <p className="about-description">
-              Huarmy Coffee Restaurant nace de la pasión por la cocina tradicional ecuatoriana,
-              bajo la dirección de la Chef Administradora Verónica Rivera y Francisco Rivera.
-              "El sabor de la memoria..." es nuestra filosofía: cada plato revive las recetas
-              de nuestras abuelas, preparadas con ingredientes frescos y mucho amor.
-              Somos un espacio familiar donde la tradición y el sabor se encuentran.
+              Huarmy Coffee Restaurant nace de la pasión por la cocina tradicional
+              ecuatoriana, bajo la dirección de la Chef Administradora Verónica
+              Rivera y Francisco Rivera. “El sabor de la memoria…” es nuestra
+              filosofía: cada plato revive las recetas de nuestras abuelas,
+              preparadas con ingredientes frescos y mucho amor. Somos un espacio
+              familiar donde la tradición y el sabor se encuentran.
             </p>
 
             <div className="highlights">
               <div className="highlight-item">
                 <div className="icon-circle">
-                  <Coffee size={24} />
+                  <Coffee size={22} />
                 </div>
                 <div className="highlight-text">
                   <h4>Café de Origen</h4>
-                  <p>Seleccionamos los mejores granos de pequeños productores locales.</p>
+                  <p>
+                    Seleccionamos granos de productores locales para una taza
+                    auténtica.
+                  </p>
                 </div>
               </div>
 
               <div className="highlight-item">
                 <div className="icon-circle">
-                  <Heart size={24} />
+                  <Heart size={22} />
                 </div>
                 <div className="highlight-text">
                   <h4>Hecho con Amor</h4>
-                  <p>Cada preparación es una obra de arte que refleja nuestra pasión.</p>
+                  <p>
+                    Cada preparación refleja nuestra pasión y cuidado en cada
+                    detalle.
+                  </p>
                 </div>
               </div>
 
               <div className="highlight-item">
                 <div className="icon-circle">
-                  <Leaf size={24} />
+                  <Leaf size={22} />
                 </div>
                 <div className="highlight-text">
                   <h4>Sostenible</h4>
-                  <p>Comprometidos con prácticas agrícolas responsables y comercio justo.</p>
+                  <p>
+                    Comprometidos con prácticas responsables y comercio justo.
+                  </p>
                 </div>
               </div>
             </div>
-
           </motion.div>
 
-          {/* Columna derecha - Imagen */}
           <motion.div
             className="about-image"
             initial={{ opacity: 0, x: 60 }}
@@ -76,6 +83,7 @@ const Nosotros = () => {
               src="https://thumbs.dreamstime.com/b/group-friends-enjoy-hot-drinks-cafe-hands-holding-lattes-coffee-art-relaxing-morning-cozy-eatery-top-view-table-346769672.jpg"
               alt="Variedad de cafés con latte art en mesa de madera"
               className="main-image"
+              loading="lazy"
             />
           </motion.div>
         </div>
@@ -85,3 +93,4 @@ const Nosotros = () => {
 };
 
 export default Nosotros;
+
