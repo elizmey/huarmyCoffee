@@ -4,9 +4,10 @@ import './App.css';
 import Home from './components/Home';
 import Menu from './components/Menu';
 import Contact from './components/Contact';
-import Testimonials from "./components/Testimonials";
+import Testimonials from './components/Testimonials';
 import Gallery from './components/Gallery';
 import Nosotros from './components/Nosotros';
+import Servicios from './components/Servicios';
 import Ubicacion from './components/Ubicacion';
 
 function App() {
@@ -16,10 +17,8 @@ function App() {
   useEffect(() => {
     const controlHeader = () => {
       if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        // Scrolling down - ocultar header
         setShowHeader(false);
       } else {
-        // Scrolling up - mostrar header
         setShowHeader(true);
       }
       setLastScrollY(window.scrollY);
@@ -40,7 +39,7 @@ function App() {
       zIndex: 1000,
       boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
       transition: 'top 0.4s ease-in-out',
-      borderBottom: '2px solid #d4a373'
+      borderBottom: '2px solid #d4a373',
     },
     container: {
       maxWidth: '1200px',
@@ -48,7 +47,7 @@ function App() {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '10px'
+      gap: '10px',
     },
     logo: {
       height: '70px',
@@ -56,11 +55,11 @@ function App() {
       borderRadius: '50%',
       border: '3px solid #d4a373',
       boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      transition: 'transform 0.3s ease'
+      transition: 'transform 0.3s ease',
     },
     nav: {
       display: 'flex',
-      gap: '30px'
+      gap: '30px',
     },
     link: {
       color: '#f5e8d3',
@@ -71,23 +70,23 @@ function App() {
       borderRadius: '30px',
       transition: 'all 0.3s ease',
       letterSpacing: '0.5px',
-      border: '1px solid transparent'
-    }
+      border: '1px solid transparent',
+    },
   };
 
   return (
     <div className="App">
       <header style={headerStyles.header}>
         <div style={headerStyles.container}>
-          <img 
-            src="/imagenes/local/logo-lugar.jpg" 
-            alt="Huarmy Coffee Logo" 
+          <img
+            src="/imagenes/local/logo-lugar.jpg"
+            alt="Huarmy Coffee Logo"
             style={headerStyles.logo}
-            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            onMouseEnter={(e) => (e.target.style.transform = 'scale(1.05)')}
+            onMouseLeave={(e) => (e.target.style.transform = 'scale(1)')}
           />
           <nav style={headerStyles.nav}>
-            {['inicio', 'menu', 'nosotros', 'ubicacion', 'contact'].map((item) => (
+            {['inicio', 'menu', 'nosotros', 'servicios', 'ubicacion', 'contact'].map((item) => (
               <a
                 key={item}
                 href={`#${item}`}
@@ -103,35 +102,45 @@ function App() {
                   e.target.style.borderColor = 'transparent';
                 }}
               >
-                {item === 'inicio' ? 'Inicio' : 
-                 item === 'menu' ? 'Menú' : 
-                 item === 'nosotros' ? 'Nuestra Historia' : item === 'ubicacion' ? 'Ubicación' : 'Contacto'}
+                {item === 'inicio'
+                  ? 'Inicio'
+                  : item === 'menu'
+                    ? 'MenÃº'
+                    : item === 'nosotros'
+                      ? 'Nuestra Historia'
+                      : item === 'servicios'
+                        ? 'Servicios'
+                        : item === 'ubicacion'
+                          ? 'UbicaciÃ³n'
+                          : 'Contacto'}
               </a>
             ))}
           </nav>
         </div>
       </header>
 
-      {/* Espaciador para que el contenido no quede debajo del header fijo */}
       <div style={{ height: '140px' }} />
 
       <Home />
       <Menu />
       <Nosotros />
+      <Servicios />
       <Testimonials />
       <Gallery />
       <Ubicacion />
       <Contact />
 
-      <footer style={{ 
-        textAlign: 'center', 
-        padding: '30px', 
-        background: '#2c1a0f', 
-        color: '#d4a373',
-        borderTop: '2px solid #d4a373'
-      }}>
+      <footer
+        style={{
+          textAlign: 'center',
+          padding: '30px',
+          background: '#2c1a0f',
+          color: '#d4a373',
+          borderTop: '2px solid #d4a373',
+        }}
+      >
         <p style={{ margin: 0, fontSize: '14px', letterSpacing: '1px' }}>
-          Todos los derechos reservados © 2026 Huarmy Coffee
+          Todos los derechos reservados Â© 2026 Huarmy Coffee
         </p>
       </footer>
     </div>
