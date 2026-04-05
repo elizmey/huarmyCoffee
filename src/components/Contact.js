@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Phone, Mail, Clock, Instagram, Facebook } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Instagram, Facebook, MessageCircle } from "lucide-react";
 import "../assets/css/style.css";
+
+const WHATSAPP_NUMBER = "593983436356";
 
 const contactInfo = [
   { icon: MapPin, label: "Dirección", value: "Av. Equinoccial &, Quito" },
@@ -16,22 +18,49 @@ const contactInfo = [
 ];
 
 const Contact = () => {
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+
+  const whatsappUrl = useMemo(() => {
+    const baseMessage = [
+      "Hola Huarmy Coffee, tengo un mensaje desde la web.",
+      name ? `Nombre: ${name}` : null,
+      message ? `Mensaje: ${message}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(baseMessage)}`;
+  }, [name, message]);
+
   return (
     <section id="contact" className="contact-section">
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="whatsapp-floating-button"
+        aria-label="Contáctanos por WhatsApp"
+      >
+        <MessageCircle />
+        <span>Contáctanos</span>
+      </a>
+
       <div className="container">
         <div className="grid-2-cols">
           {/* Izquierda - Información */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false }}
             transition={{ duration: 0.8 }}
           >
             <p className="uppercase-tracking">Contáctanos Hoy</p>
             <h2 className="title-big">Visítanos Hoy</h2>
 
             <p className="text-soft">
-              Te esperamos con una taza recién preparada. Ven a descubrir por qué Huarmy Coffee es el lugar favorito de nuestra comunidad.
+              Te esperamos con una taza recién preparada. Ven a descubrir por qué Huarmy Coffee es el lugar favorito
+              de nuestra comunidad.
             </p>
 
             <div>
@@ -65,17 +94,29 @@ const Contact = () => {
               >
                 <Facebook />
               </a>
+              <a
+                href="mailto:huarmycoffee@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link"
+                aria-label="Enviar correo"
+              >
+                <Mail />
+              </a>
             </div>
           </motion.div>
 
-          {/* Derecha - Formulario */}
+          {/* Derecha - Formulario WhatsApp */}
           <motion.form
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="form-card"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+            }}
           >
             <h3 className="form-title">Envíanos un Mensaje</h3>
 
@@ -85,15 +126,8 @@ const Contact = () => {
                 type="text"
                 placeholder="Tu nombre"
                 className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                placeholder="tu@email.com"
-                className="form-input"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
               />
             </div>
 
@@ -103,11 +137,13 @@ const Contact = () => {
                 rows={5}
                 placeholder="¿En qué podemos ayudarte?"
                 className="form-textarea"
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
               />
             </div>
 
-            <button type="submit" className="btn-submit">
-              Enviar Mensaje
+            <button type="submit" className="btn-submit btn-whatsapp">
+              Enviar por WhatsApp
             </button>
           </motion.form>
         </div>

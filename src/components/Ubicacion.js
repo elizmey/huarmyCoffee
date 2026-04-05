@@ -1,10 +1,17 @@
 import React from "react";
+import { motion } from "framer-motion";
 import "../assets/css/style.css";
 
 function Ubicacion() {
   return (
     <section id="ubicacion" className="ubicacion-section">
-      <div className="ubicacion-container">
+      <motion.div
+        className="ubicacion-container"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false }}
+        transition={{ duration: 0.8 }}
+      >
         <h1>📍 Nuestra Ubicación</h1>
         <p>Visítanos y disfruta del mejor café en un ambiente acogedor</p>
 
@@ -28,7 +35,7 @@ function Ubicacion() {
         >
           Abrir en Google Maps
         </a>
-      </div>
+      </motion.div>
     </section>
   );
 }

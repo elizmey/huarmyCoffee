@@ -12,7 +12,7 @@ const Nosotros = () => {
             className="about-content"
             initial={{ opacity: 0, x: -60 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false }}
             transition={{ duration: 0.8 }}
           >
             <p className="section-label">NUESTRA HISTORIA</p>
@@ -76,7 +76,7 @@ const Nosotros = () => {
             className="about-image"
             initial={{ opacity: 0, x: 60 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
             <img
@@ -93,4 +93,3 @@ const Nosotros = () => {
 };
 
 export default Nosotros;
-
