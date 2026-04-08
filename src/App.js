@@ -9,6 +9,7 @@ import Gallery from './components/Gallery';
 import Nosotros from './components/Nosotros';
 import Servicios from './components/Servicios';
 import Ubicacion from './components/Ubicacion';
+import Promociones from './components/Promociones';
 
 function App() {
   const [showHeader, setShowHeader] = useState(true);
@@ -88,7 +89,7 @@ function App() {
             onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
           />
           <nav style={headerStyles.nav}>
-            {['inicio', 'menu', 'nosotros', 'servicios', 'ubicacion', 'contact'].map((item) => (
+            {['inicio', 'menu', 'nosotros', 'servicios', 'promociones', 'ubicacion', 'contact'].map((item) => (
               <a
                 key={item}
                 href={`#${item}`}
@@ -106,9 +107,10 @@ function App() {
               >
                 {item === 'inicio' ? 'Inicio' :
                   item === 'menu' ? 'Menú' :
-                    item === 'nosotros' ? 'Nuestra Historia' :
-                      item === 'servicios' ? 'Servicios' :
-                        item === 'ubicacion' ? 'Ubicación' : 'Contacto'}
+                    item === 'promociones' ? 'Promociones' :
+                      item === 'nosotros' ? 'Nuestra Historia' :
+                        item === 'servicios' ? 'Servicios' :
+                          item === 'ubicacion' ? 'Ubicación' : 'Contacto'}
               </a>
             ))}
           </nav>
@@ -120,6 +122,7 @@ function App() {
 
       <Home />
       <Menu />
+      <Promociones />
       <Nosotros />
       <Servicios />
       <Testimonials />

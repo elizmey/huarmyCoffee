@@ -27,8 +27,25 @@ function Home() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4, duration: 1 }}
         >
-          Huarmy <span>Coffee</span>
+          Huarmy Coffee Catering Restaurant
         </motion.h1>
+
+        <motion.p
+          className="hero-sostenible"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          style={{
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            color: '#d4a373',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            marginBottom: '15px'
+          }}
+        >
+          🌱 Compromiso sostenible: Alimentación Equilibrada y saludable para Empresas y grupos.
+        </motion.p>
 
         <motion.p
           className="hero-subtitle"
@@ -64,9 +81,9 @@ function Home() {
           📍 Av. Equinoccial &, Quito | 🕒 8:00 AM - 5:30 PM
         </motion.p>
 
-       <a href="#ubicacion" className="btn-maps">
-        Ver ubicación
-</a>
+        <a href="#ubicacion" className="btn-maps">
+          Ver ubicación
+        </a>
       </motion.div>
     </section>
   );
