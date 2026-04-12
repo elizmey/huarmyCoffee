@@ -9,6 +9,7 @@ import Testimonials from './components/Testimonials';
 import Gallery from './components/Gallery';
 import Nosotros from './components/Nosotros';
 import Servicios from './components/Servicios';
+import Promociones from './components/Promociones';
 import Ubicacion from './components/Ubicacion';
 
 function App() {
@@ -117,6 +118,7 @@ function App() {
   const navItems = [
     { id: 'inicio', label: 'Inicio' },
     { id: 'menu', label: 'Men\u00fa' },
+    { id: 'promociones', label: 'Promociones' },
     { id: 'nosotros', label: 'Nuestra Historia' },
     { id: 'servicios', label: 'Servicios' },
     { id: 'ubicacion', label: 'Ubicaci\u00f3n' },
@@ -202,6 +204,7 @@ function App() {
 
       <Home />
       <Menu />
+      <Promociones />
       <Nosotros />
       <Servicios />
       <Testimonials />

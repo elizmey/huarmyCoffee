@@ -27,7 +27,7 @@ function Home() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4, duration: 1 }}
         >
-          Huarmy <span>Coffee</span>
+          HUARMY COFFEE CATERING <span>RESTAURANT</span>
         </motion.h1>
 
         <motion.p

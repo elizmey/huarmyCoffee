@@ -342,6 +342,28 @@ const Menu = () => {
         <div style={specialNoteStyle}>
           Todos nuestros platos son preparados al momento con ingredientes frescos y recetas tradicionales
         </div>
+
+        <div style={{ textAlign: "center", marginTop: "18px" }}>
+          <a
+            href="#promociones"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              padding: "14px 24px",
+              borderRadius: "999px",
+              textDecoration: "none",
+              color: "#fff",
+              background: "linear-gradient(135deg, #3b2a1f, #d4a373)",
+              boxShadow: "0 16px 34px rgba(44, 26, 15, 0.2)",
+              fontWeight: 700,
+              letterSpacing: "0.3px",
+            }}
+          >
+            Ver promociones
+          </a>
+        </div>
       </div>
 
       {bulkEditor.open && (

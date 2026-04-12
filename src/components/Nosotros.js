@@ -23,12 +23,21 @@ const Nosotros = () => {
             </h2>
 
             <p className="about-description">
-              Huarmy Coffee Restaurant nace de la pasión por la cocina tradicional
-              ecuatoriana, bajo la dirección de la Chef Administradora Verónica
-              Rivera y Francisco Rivera. “El sabor de la memoria…” es nuestra
-              filosofía: cada plato revive las recetas de nuestras abuelas,
-              preparadas con ingredientes frescos y mucho amor. Somos un espacio
-              familiar donde la tradición y el sabor se encuentran.
+              En Huarmy Coffee Restaurant, bajo la dirección de la Chef
+              Verónica Rivera y Francisco Rivera, evolucionamos el "sabor de la
+              memoria" hacia una propuesta de alimentación equilibrada y
+              saludable para empresas y grupos.
+              Creemos que la productividad de un equipo nace de una nutrición
+              consciente. Por eso, diseñamos experiencias gastronómicas para
+              eventos especiales que fusionan las recetas tradicionales de
+              nuestras abuelas con un enfoque balanceado, utilizando
+              ingredientes frescos y porciones cuidadas. 
+              Somos el aliado estratégico de tu empresa para transformar la
+              alimentación diaria en un momento de bienestar, calidez y alto
+              valor nutricional.
+              <br />
+              <br />
+
             </p>
 
             <div className="highlights">
@@ -37,10 +46,10 @@ const Nosotros = () => {
                   <Coffee size={22} />
                 </div>
                 <div className="highlight-text">
-                  <h4>Café de Origen</h4>
+                  <h4>Nutrición Equilibrada</h4>
                   <p>
-                    Seleccionamos granos de productores locales para una taza
-                    auténtica.
+                    Diseñamos menús balanceados pensados para cuidar la energía
+                    y el bienestar de cada equipo.
                   </p>
                 </div>
               </div>
@@ -50,10 +59,10 @@ const Nosotros = () => {
                   <Heart size={22} />
                 </div>
                 <div className="highlight-text">
-                  <h4>Hecho con Amor</h4>
+                  <h4>Recetas con Tradición</h4>
                   <p>
-                    Cada preparación refleja nuestra pasión y cuidado en cada
-                    detalle.
+                    Fusionamos el sabor de la memoria con recetas caseras,
+                    ingredientes frescos y una presentación cuidada.
                   </p>
                 </div>
               </div>
@@ -63,9 +72,10 @@ const Nosotros = () => {
                   <Leaf size={22} />
                 </div>
                 <div className="highlight-text">
-                  <h4>Sostenible</h4>
+                  <h4>Servicio para Empresas</h4>
                   <p>
-                    Comprometidos con prácticas responsables y comercio justo.
+                    Somos aliados estratégicos para eventos, grupos y jornadas
+                    corporativas con atención cálida y puntual.
                   </p>
                 </div>
               </div>
@@ -80,7 +90,7 @@ const Nosotros = () => {
             transition={{ duration: 0.8, delay: 0.3 }}
           >
             <img
-              src="https://thumbs.dreamstime.com/b/group-friends-enjoy-hot-drinks-cafe-hands-holding-lattes-coffee-art-relaxing-morning-cozy-eatery-top-view-table-346769672.jpg"
+              src="/nosotros/image.png"
               alt="Variedad de cafés con latte art en mesa de madera"
               className="main-image"
               loading="lazy"
