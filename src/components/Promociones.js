@@ -86,11 +86,11 @@ const createDefaultPackages = () => [
 ];
 
 const defaultHighlight = {
-  eyebrow: "PROMOCIONES",
+  eyebrow: "Equilibrada",
   title: "Alimentacion equilibrada para empresas y grupos",
   description:
     "Diseñamos opciones premium para equipos de trabajo, reuniones y eventos con una experiencia cuidada desde la cocina hasta la entrega.",
-  badgePrimary: "Premium",
+  badgePrimary: "Equilibrada",
   badgeSecondary: "Beneficios por volumen",
   statOneLabel: "Atencion",
   statOneValue: "Personalizada",

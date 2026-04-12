@@ -36,8 +36,8 @@ function Home() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 1 }}
         >
-          Donde cada taza cuenta una historia.<br />
-          Café de origen artesanal, preparado con pasión y tradición ecuatoriana.
+              Sabores de nuestra tierra en cada bocado<br /> 
+              y que narran la historia de un Ecuador diverso en cada plato y cada taza
         </motion.p>
 
         <motion.div
