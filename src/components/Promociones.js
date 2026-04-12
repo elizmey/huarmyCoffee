@@ -79,18 +79,18 @@ const createDefaultPackages = () => [
   },
   {
     id: "pkg-3",
-    title: "Plan Premium",
+    title: "Plan Equilibrda",
     price: "A convenir",
     items: ["Propuesta a medida", "Montaje especial", "Eventos empresariales"],
   },
 ];
 
 const defaultHighlight = {
-  eyebrow: "Equilibrada",
+  eyebrow: "Equilibrda",
   title: "Alimentacion equilibrada para empresas y grupos",
   description:
-    "Diseñamos opciones premium para equipos de trabajo, reuniones y eventos con una experiencia cuidada desde la cocina hasta la entrega.",
-  badgePrimary: "Equilibrada",
+    "Diseñamos opciones equilibrda para equipos de trabajo, reuniones y eventos con una experiencia cuidada desde la cocina hasta la entrega.",
+  badgePrimary: "Equilibrda",
   badgeSecondary: "Beneficios por volumen",
   statOneLabel: "Atencion",
   statOneValue: "Personalizada",
@@ -136,10 +136,20 @@ const loadSavedState = () => {
         ? parsed.featuredPromotionId
         : promotions[0]?.id || "";
 
+    const savedHighlight = { ...defaultHighlight, ...(parsed.highlight || {}) };
+    const normalizePremium = (value) =>
+      typeof value === "string" && value.trim().toLowerCase() === "premium" ? "Equilibrda" : value;
+    savedHighlight.eyebrow = normalizePremium(savedHighlight.eyebrow);
+    savedHighlight.badgePrimary = normalizePremium(savedHighlight.badgePrimary);
+    savedHighlight.description =
+      typeof savedHighlight.description === "string"
+        ? savedHighlight.description.replace(/premium/gi, "equilibrda")
+        : savedHighlight.description;
+
     return {
       promotions,
       packages,
-      highlight: { ...defaultHighlight, ...(parsed.highlight || {}) },
+      highlight: savedHighlight,
       featuredPromotionId,
     };
   } catch {
