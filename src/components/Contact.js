@@ -87,7 +87,7 @@ const Contact = () => {
                 <Instagram />
               </a>
               <a
-                href="https://www.facebook.com/"
+                href="https://www.facebook.com/groups/2761410240810200/user/100000261163987"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-link"

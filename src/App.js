@@ -13,23 +13,7 @@ import Promociones from './components/Promociones';
 import Ubicacion from './components/Ubicacion';
 
 function App() {
-  const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const controlHeader = () => {
-      if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        setShowHeader(false);
-      } else {
-        setShowHeader(true);
-      }
-      setLastScrollY(window.scrollY);
-    };
-
-    window.addEventListener('scroll', controlHeader);
-    return () => window.removeEventListener('scroll', controlHeader);
-  }, [lastScrollY]);
 
   useEffect(() => {
     if (!mobileMenuOpen) {
@@ -56,7 +40,7 @@ function App() {
       background: 'linear-gradient(135deg, #2c1a0f 0%, #3e2c23 100%)',
       padding: '10px 18px',
       position: 'fixed',
-      top: showHeader ? '0' : '-100px',
+      top: '0',
       left: '0',
       right: '0',
       zIndex: 1000,
@@ -123,6 +107,7 @@ function App() {
     { id: 'servicios', label: 'Servicios' },
     { id: 'ubicacion', label: 'Ubicaci\u00f3n' },
     { id: 'contact', label: 'Contacto' },
+    { id: 'portal', label: 'Retornar al Portal' },
   ];
 
   return (
