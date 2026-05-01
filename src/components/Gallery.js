@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import "../assets/css/style.css";
 
 function Gallery() {
+  const AUTO_SCROLL_DURATION_MS = 46000;
   const galleryImages = [
     { src: "/imagenes/local/lugar1.jpg", alt: "Interior del café" },
     { src: "/imagenes/local/lugar2.jpg", alt: "Ambiente acogedor" },
@@ -18,9 +19,10 @@ function Gallery() {
     { src: "/imagenes/clientes/cliente4.jpg", alt: "Reseña de cliente 4" },
     { src: "/imagenes/clientes/cliente5.jpg", alt: "Reseña de cliente 5" },
   ];
-
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
   const carouselRef = useRef(null);
   const dragStateRef = useRef({
     active: false,
@@ -131,6 +133,19 @@ function Gallery() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, galleryImages.length]);
 
+  useEffect(() => {
+    if (isDragging || isCarouselPaused) {
+      return undefined;
+    }
+
+    const stepDuration = AUTO_SCROLL_DURATION_MS / galleryImages.length;
+    const intervalId = window.setInterval(() => {
+      setActiveCarouselIndex((current) => (current + 1) % galleryImages.length);
+    }, stepDuration);
+
+    return () => window.clearInterval(intervalId);
+  }, [galleryImages.length, isDragging, isCarouselPaused]);
+
   return (
     <section id="galeria" className="gallery-section">
       <div className="gallery-container">
@@ -150,6 +165,8 @@ function Gallery() {
           className={isDragging ? "carousel-wrapper is-dragging" : "carousel-wrapper"}
           ref={carouselRef}
           onPointerDown={handlePointerDown}
+          onMouseEnter={() => setIsCarouselPaused(true)}
+          onMouseLeave={() => setIsCarouselPaused(false)}
         >
           <div className="carousel-track">
             {[...galleryImages, ...galleryImages].map((img, idx) => (
@@ -170,6 +187,19 @@ function Gallery() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="gallery-carousel-dots" aria-label="Indicadores de imagen">
+          {galleryImages.map((img, index) => (
+            <button
+              key={`${img.src}-carousel-dot`}
+              type="button"
+              className={index === activeCarouselIndex ? "gallery-dot active" : "gallery-dot"}
+              onClick={() => openViewer(index)}
+              aria-label={`Ver imagen ${index + 1} de ${galleryImages.length}`}
+              aria-pressed={index === activeCarouselIndex}
+            />
+          ))}
         </div>
       </div>
 

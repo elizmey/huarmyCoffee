@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BadgePercent,
@@ -21,6 +21,7 @@ import {
 import "../assets/css/style.css";
 
 const STORAGE_KEY = "huarmy_promociones_editor_v1";
+const WHATSAPP_NUMBER = "593983436356";
 
 const createDefaultPromotions = () => [
   {
@@ -163,7 +164,8 @@ const getPromotionIcon = (index) => {
 };
 
 const isPersistableImage = (value) =>
-  typeof value === "string" && (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/"));
+  typeof value === "string" &&
+  (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/") || value.startsWith("data:image/"));
 
 const parseDateAtLocalMidnight = (value) => {
   if (typeof value !== "string" || !value) {
@@ -174,6 +176,14 @@ const parseDateAtLocalMidnight = (value) => {
     return null;
   }
   return new Date(year, month - 1, day);
+};
+
+const getTodayInputValue = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const isPromotionActive = (promotion, now = new Date()) => {
@@ -247,8 +257,19 @@ const createNewPackage = () => ({
   items: ["Beneficio 1", "Beneficio 2", "Beneficio 3"],
 });
 
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(reader.error || new Error("No se pudo leer la imagen."));
+    reader.readAsDataURL(file);
+  });
+
 const clonePromotions = (list) => list.map((promotion) => ({ ...promotion }));
 const clonePackages = (list) => list.map((pkg) => ({ ...pkg, items: Array.isArray(pkg.items) ? [...pkg.items] : [] }));
+const isPlaceholderPromotionTitle = (value) => typeof value === "string" && value.trim().toLowerCase() === "nueva promocion";
+const isPlaceholderPromotionDescription = (value) =>
+  typeof value === "string" && value.trim().toLowerCase() === "describe aqui los beneficios de esta promocion.";
 
 const Promociones = () => {
   const savedState = loadSavedState();
@@ -262,9 +283,18 @@ const Promociones = () => {
 
   const [promotions, setPromotions] = useState(initialPromotions);
   const [packages, setPackages] = useState(initialPackages);
-  const [highlight, setHighlight] = useState(initialHighlight);
+  const [highlight] = useState(initialHighlight);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorPage, setEditorPage] = useState("promotions");
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [quoteContext, setQuoteContext] = useState({ type: "", title: "" });
+  const [quoteForm, setQuoteForm] = useState({
+    name: "",
+    phone: "",
+    date: "",
+    guests: "",
+    message: "",
+  });
   const [selectedPromotionId, setSelectedPromotionId] = useState(initialPromotions[0]?.id || "promo-1");
   const [featuredPromotionId, setFeaturedPromotionId] = useState(initialFeaturedPromotionId);
   const [imageSourceMode, setImageSourceMode] = useState("url");
@@ -275,6 +305,7 @@ const Promociones = () => {
   const uploadedImageUrlsRef = useRef({});
   const [canScrollPromotionsLeft, setCanScrollPromotionsLeft] = useState(false);
   const [canScrollPromotionsRight, setCanScrollPromotionsRight] = useState(false);
+  const hasMountedRef = useRef(false);
   const lastSavedStateRef = useRef({
     promotions: clonePromotions(initialPromotions),
     packages: clonePackages(initialPackages),
@@ -306,12 +337,21 @@ const Promociones = () => {
   const visiblePromotions = promotions.filter((promotion) => isPromotionActive(promotion));
   const featuredPromotion =
     visiblePromotions.find((promotion) => promotion.id === featuredPromotionId) || visiblePromotions[0] || promotions[0] || null;
+  const featuredPromotionTitle =
+    featuredPromotion && !isPlaceholderPromotionTitle(featuredPromotion.title) ? featuredPromotion.title : highlight.title;
+  const featuredPromotionDescription =
+    featuredPromotion && !isPlaceholderPromotionDescription(featuredPromotion.description)
+      ? featuredPromotion.description
+      : highlight.description;
   const visibleOrderedPromotions = [
     ...visiblePromotions.filter((promotion) => promotion.id === featuredPromotionId),
     ...visiblePromotions.filter((promotion) => promotion.id !== featuredPromotionId),
   ];
   const hasPromotions = visiblePromotions.length > 0;
   const hasPackages = packages.length > 0;
+  const showHero = hasPromotions || hasPackages;
+  const showEmptyPromotionsState = !hasPromotions && !hasPackages;
+  const todayInputValue = getTodayInputValue();
 
   const scrollPromotions = (direction) => {
     const grid = promotionsGridRef.current;
@@ -381,6 +421,60 @@ const Promociones = () => {
     }
   }, [promotions, featuredPromotionId]);
 
+  const buildSerializableEditorState = useCallback(() => {
+    const defaultPromotions = createDefaultPromotions();
+    const serializablePromotions = promotions.map((promotion, index) => ({
+      ...promotion,
+      image: isPersistableImage(promotion.image) ? promotion.image : defaultPromotions[index]?.image || "",
+    }));
+    const serializablePackages = packages.map((pkg) => ({
+      ...pkg,
+      items: Array.isArray(pkg.items)
+        ? pkg.items.map((item) => `${item}`.trim()).filter(Boolean)
+        : [],
+    }));
+    const nextFeaturedId =
+      serializablePromotions.find((promotion) => promotion.id === featuredPromotionId)?.id || serializablePromotions[0]?.id || "";
+
+    return {
+      promotions: serializablePromotions,
+      packages: serializablePackages,
+      highlight,
+      featuredPromotionId: nextFeaturedId,
+    };
+  }, [promotions, packages, highlight, featuredPromotionId]);
+
+  const persistEditorState = useCallback(({ closeEditor = false } = {}) => {
+    const nextState = buildSerializableEditorState();
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+      lastSavedStateRef.current = {
+        promotions: clonePromotions(nextState.promotions),
+        packages: clonePackages(nextState.packages),
+        highlight: { ...nextState.highlight },
+        featuredPromotionId: nextState.featuredPromotionId,
+      };
+      setFeaturedPromotionId(nextState.featuredPromotionId);
+    } catch (error) {
+      console.warn("No se pudo guardar el editor de promociones en localStorage:", error);
+    }
+
+    if (closeEditor) {
+      setEditorOpen(false);
+      setEditorPage("promotions");
+    }
+  }, [buildSerializableEditorState]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    persistEditorState();
+  }, [promotions, packages, highlight, featuredPromotionId, persistEditorState]);
+
   const updateSelectedPromotion = (field, value) => {
     setPromotions((prev) =>
       prev.map((promotion) =>
@@ -412,22 +506,19 @@ const Promociones = () => {
     }
   };
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file || !selectedPromotion) {
       return;
     }
 
-    const nextUrl = URL.createObjectURL(file);
-    const previousUrl = uploadedImageUrlsRef.current[selectedPromotion.id];
-
-    if (previousUrl && previousUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(previousUrl);
+    try {
+      const nextImage = await readFileAsDataUrl(file);
+      updateSelectedPromotion("image", nextImage);
+      setImageSourceMode("upload");
+    } catch (error) {
+      console.warn("No se pudo cargar la imagen seleccionada:", error);
     }
-
-    uploadedImageUrlsRef.current[selectedPromotion.id] = nextUrl;
-    updateSelectedPromotion("image", nextUrl);
-    setImageSourceMode("upload");
   };
 
   const addPromotion = () => {
@@ -466,60 +557,44 @@ const Promociones = () => {
     }
   };
 
-  const restoreLastSaved = () => {
-    const snapshot = lastSavedStateRef.current;
-    const restoredPromotions = clonePromotions(snapshot.promotions);
-    const restoredPackages = clonePackages(snapshot.packages);
-    const nextFeaturedId =
-      restoredPromotions.find((promotion) => promotion.id === snapshot.featuredPromotionId)?.id || restoredPromotions[0]?.id || "";
-
-    setPromotions(restoredPromotions);
-    setPackages(restoredPackages);
-    setHighlight({ ...snapshot.highlight });
-    setFeaturedPromotionId(nextFeaturedId);
-    setSelectedPromotionId(restoredPromotions[0]?.id || "promo-1");
-    setImageSourceMode("url");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
 
   const saveEditorChanges = () => {
-    const serializablePromotions = promotions.map((promotion, index) => ({
-      ...promotion,
-      image: isPersistableImage(promotion.image) ? promotion.image : createDefaultPromotions()[index]?.image || "",
-    }));
-    const serializablePackages = packages.map((pkg) => ({
-      ...pkg,
-      items: Array.isArray(pkg.items)
-        ? pkg.items.map((item) => `${item}`.trim()).filter(Boolean)
-        : [],
-    }));
-    const nextFeaturedId =
-      serializablePromotions.find((promotion) => promotion.id === featuredPromotionId)?.id || serializablePromotions[0]?.id || "";
+    persistEditorState({ closeEditor: true });
+  };
 
-    try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          promotions: serializablePromotions,
-          packages: serializablePackages,
-          highlight,
-          featuredPromotionId: nextFeaturedId,
-        })
-      );
-      lastSavedStateRef.current = {
-        promotions: clonePromotions(serializablePromotions),
-        packages: clonePackages(serializablePackages),
-        highlight: { ...highlight },
-        featuredPromotionId: nextFeaturedId,
-      };
-      setFeaturedPromotionId(nextFeaturedId);
-    } catch (error) {
-      console.warn("No se pudo guardar el editor de promociones en localStorage:", error);
-    }
-    setEditorOpen(false);
-    setEditorPage("promotions");
+  const openQuoteModal = (type, title) => {
+    setQuoteContext({ type, title });
+    setQuoteModalOpen(true);
+  };
+
+  const closeQuoteModal = () => {
+    setQuoteModalOpen(false);
+  };
+
+  const updateQuoteField = (field, value) => {
+    setQuoteForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const submitQuoteToWhatsApp = (event) => {
+    event.preventDefault();
+
+    const message = [
+      `Hola Huarmy Coffee, quiero ${quoteContext.type === "package" ? "cotizar un paquete" : "reservar/cotizar una promocion"}.`,
+      quoteContext.title ? `Opcion: ${quoteContext.title}` : null,
+      quoteForm.name ? `Nombre: ${quoteForm.name}` : null,
+      quoteForm.phone ? `Telefono: ${quoteForm.phone}` : null,
+      quoteForm.date ? `Fecha: ${quoteForm.date}` : null,
+      quoteForm.guests ? `Personas: ${quoteForm.guests}` : null,
+      quoteForm.message ? `Mensaje: ${quoteForm.message}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    setQuoteModalOpen(false);
   };
 
   const updatePackageField = (packageId, field, value) => {
@@ -554,7 +629,7 @@ const Promociones = () => {
   return (
     <section id="promociones" className="promotions-section">
       <div className="promotions-container">
-        {hasPromotions && (
+        {showHero && (
           <motion.div
             className="promotions-hero"
             initial={{ opacity: 0, y: 40 }}
@@ -595,8 +670,8 @@ const Promociones = () => {
 
               <div className="promotions-highlight-main">
                 <p>Promocion destacada</p>
-                <h3>{featuredPromotion?.title || highlight.title}</h3>
-                <p className="promotions-highlight-description">{featuredPromotion?.description || highlight.description}</p>
+                <h3>{featuredPromotionTitle}</h3>
+                <p className="promotions-highlight-description">{featuredPromotionDescription}</p>
                 <div className="promotions-stat-row">
                   <div>
                     <strong>{highlight.statOneLabel}</strong>
@@ -617,7 +692,9 @@ const Promociones = () => {
         )}
 
         {(hasPromotions || hasPackages) && (
-          <div className={`promotions-bottom-layout ${hasPromotions && hasPackages ? "promotions-bottom-layout--split" : ""}`}>
+          <div
+            className={`promotions-bottom-layout ${hasPromotions && hasPackages ? "promotions-bottom-layout--split" : ""} ${hasPackages && !hasPromotions ? "promotions-bottom-layout--packages-only" : ""}`}
+          >
             {hasPromotions && (
               <div className="promotions-column">
                 <div className="promotions-column-header">
@@ -696,6 +773,13 @@ const Promociones = () => {
                               {promotion.image ? "Imagen cargada" : "Sin imagen"}
                             </span>
                           </div>
+                          <button
+                            type="button"
+                            className="promotion-cta-button"
+                            onClick={() => openQuoteModal("promotion", promotion.title)}
+                          >
+                            Reservar o cotizar
+                          </button>
                         </div>
                       </motion.article>
                     );
@@ -729,6 +813,13 @@ const Promociones = () => {
                             <li key={`${pkg.id}-item-${index}`}>{item}</li>
                           ))}
                         </ul>
+                        <button
+                          type="button"
+                          className="promotion-cta-button promotion-cta-button--package"
+                          onClick={() => openQuoteModal("package", pkg.title)}
+                        >
+                          Reservar o cotizar
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -738,7 +829,7 @@ const Promociones = () => {
           </div>
         )}
 
-        {!hasPromotions && (
+        {showEmptyPromotionsState && (
           <motion.div
             className="promotions-empty-state"
             initial={{ opacity: 0, y: 28 }}
@@ -803,7 +894,50 @@ const Promociones = () => {
             {editorPage === "promotions" ? (
               <div className="promotions-editor-layout">
                 <aside className="promotions-editor-list">
-                  <h4>Promociones</h4>
+                  <div className="promotions-editor-list-header">
+                    <h4>Promociones</h4>
+                    <div className="promotions-editor-list-actions promotions-editor-list-actions--inline" style={{gap: '8px', display: 'flex', background: 'none', boxShadow: 'none', padding: 0}}>
+                      <button
+  type="button"
+  onClick={addPromotion}
+  aria-label="Agregar promocion"
+  title="Agregar promocion"
+  style={{
+    backgroundColor: "#22c55e",
+    border: "none",
+    padding: "6px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}
+>
+  <Plus size={14} color="#fff" />
+</button>
+
+<button
+  type="button"
+  onClick={removeSelectedPromotion}
+  disabled={!selectedPromotion}
+  aria-label="Eliminar promocion seleccionada"
+  title="Eliminar promocion seleccionada"
+  style={{
+    backgroundColor: "#ef4444",
+    border: "none",
+    padding: "6px",
+    borderRadius: "6px",
+    cursor: selectedPromotion ? "pointer" : "not-allowed",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: selectedPromotion ? 1 : 0.5
+  }}
+>
+  <Trash2 size={14} color="#fff" />
+</button>
+                    </div>
+                  </div>
                   {promotions.map((promotion) => (
                     <button
                       type="button"
@@ -842,29 +976,13 @@ const Promociones = () => {
                     </button>
                   ))}
 
-                  <div className="promotions-editor-list-actions">
-                    <button type="button" className="promotions-editor-reset" onClick={addPromotion}>
-                      Agregar promocion
-                    </button>
-                    <button
-                      type="button"
-                      className="promotions-editor-reset promotions-editor-reset--danger"
-                      onClick={removeSelectedPromotion}
-                      disabled={!selectedPromotion}
-                    >
-                      Eliminar seleccionada
-                    </button>
-                  </div>
-
-                  <button type="button" className="promotions-editor-reset" onClick={restoreLastSaved}>
-                    Restaurar ultimo guardado
-                  </button>
+                  {/* Botón 'Restaurar ultimo guardado' eliminado */}
                 </aside>
 
                 {selectedPromotion && (
                   <div className="promotions-editor-form">
                     <div className="promotions-editor-grid">
-                      <label>
+                      <label className="promotions-editor-field--span-2">
                         <span>Nombre de la promocion</span>
                         <input
                           type="text"
@@ -873,7 +991,7 @@ const Promociones = () => {
                         />
                       </label>
 
-                      <label>
+                      <label className="promotions-editor-field--span-2">
                         <span>Tipo de promocion</span>
                         <input
                           type="text"
@@ -882,32 +1000,35 @@ const Promociones = () => {
                         />
                       </label>
 
-                      <label>
-                        <span>Fecha de inicio</span>
-                        <input
-                          type="date"
-                          value={selectedPromotion.startDate || ""}
-                          onChange={(event) => updateSelectedPromotion("startDate", event.target.value)}
-                        />
-                      </label>
 
-                      <label>
-                        <span>Fecha de finalizacion</span>
-                        <input
-                          type="date"
-                          value={selectedPromotion.endDate || ""}
-                          onChange={(event) => updateSelectedPromotion("endDate", event.target.value)}
-                        />
-                      </label>
-
-                      <label>
-                        <span>Etiqueta breve</span>
-                        <input
-                          type="text"
-                          value={selectedPromotion.tag}
-                          onChange={(event) => updateSelectedPromotion("tag", event.target.value)}
-                        />
-                      </label>
+                      <div style={{ display: "flex", gap: "1rem", flexWrap: "nowrap", marginBottom: "1.5rem" }}>
+                        <label style={{ flex: 1, minWidth: 180 }}>
+                          <span>Fecha de inicio</span>
+                          <input
+                            type="date"
+                            value={selectedPromotion.startDate || ""}
+                            min={todayInputValue}
+                            onChange={(event) => updateSelectedPromotion("startDate", event.target.value)}
+                          />
+                        </label>
+                        <label style={{ flex: 1, minWidth: 180 }}>
+                          <span>Fecha de finalizacion</span>
+                          <input
+                            type="date"
+                            value={selectedPromotion.endDate || ""}
+                            min={selectedPromotion.startDate || todayInputValue}
+                            onChange={(event) => updateSelectedPromotion("endDate", event.target.value)}
+                          />
+                        </label>
+                        <label style={{ flex: 1, minWidth: 180 }}>
+                          <span>Etiqueta breve</span>
+                          <input
+                            type="text"
+                            value={selectedPromotion.tag}
+                            onChange={(event) => updateSelectedPromotion("tag", event.target.value)}
+                          />
+                        </label>
+                      </div>
 
                       <label className="promotions-editor-field--wide">
                         <span>Descripcion</span>
@@ -989,14 +1110,12 @@ const Promociones = () => {
               <div className="promotions-editor-packages-page">
                 <div className="promotions-editor-packages">
                   <h4>Editor de paquetes</h4>
-                  <div className="promotions-editor-packages-actions">
-                    <button type="button" className="promotions-editor-reset" onClick={addPackage}>
+                  <div className="promotions-editor-packages-actions" style={{gap: '8px', display: 'flex', background: 'none', boxShadow: 'none', padding: 0}}>
+                    <button type="button" style={{background: 'none', boxShadow: 'none', padding: 0, border: 'none'}} onClick={addPackage}>
                       <Plus size={14} />
                       Nuevo paquete
                     </button>
-                    <button type="button" className="promotions-editor-reset" onClick={restoreLastSaved}>
-                      Restaurar ultimo guardado
-                    </button>
+                    {/* Botón 'Restaurar ultimo guardado' eliminado */}
                   </div>
                   <div className="promotions-editor-packages-grid">
                     {packages.map((pkg) => (
@@ -1055,6 +1174,60 @@ const Promociones = () => {
                 Guardar cambios
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {quoteModalOpen && (
+        <div className="promotions-quote-overlay" onClick={closeQuoteModal}>
+          <div className="promotions-quote-card" onClick={(event) => event.stopPropagation()}>
+            <div className="promotions-quote-header">
+              <div>
+                <p className="promotions-editor-kicker">Solicitud rapida</p>
+                <h3>{quoteContext.type === "package" ? "Cotizar paquete" : "Reservar o cotizar promocion"}</h3>
+                <p className="promotions-quote-helper">{quoteContext.title}</p>
+              </div>
+              <button type="button" className="promotions-editor-close" onClick={closeQuoteModal} aria-label="Cerrar formulario">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form className="promotions-quote-form" onSubmit={submitQuoteToWhatsApp}>
+              <label>
+                <span>Nombre</span>
+                <input type="text" value={quoteForm.name} onChange={(event) => updateQuoteField("name", event.target.value)} required />
+              </label>
+              <label>
+                <span>Telefono</span>
+                <input type="tel" value={quoteForm.phone} onChange={(event) => updateQuoteField("phone", event.target.value)} />
+              </label>
+              <label>
+                <span>Fecha deseada</span>
+                <input type="date" min={todayInputValue} value={quoteForm.date} onChange={(event) => updateQuoteField("date", event.target.value)} />
+              </label>
+              <label>
+                <span>Numero de personas</span>
+                <input type="number" min="1" value={quoteForm.guests} onChange={(event) => updateQuoteField("guests", event.target.value)} />
+              </label>
+              <label className="promotions-quote-field-wide">
+                <span>Mensaje</span>
+                <textarea
+                  rows={4}
+                  value={quoteForm.message}
+                  onChange={(event) => updateQuoteField("message", event.target.value)}
+                  placeholder="Cuéntanos que necesitas para tu reserva o cotizacion."
+                />
+              </label>
+
+              <div className="promotions-quote-actions">
+                <button type="button" className="promotions-editor-button secondary" onClick={closeQuoteModal}>
+                  Cancelar
+                </button>
+                <button type="submit" className="promotions-editor-button primary">
+                  Enviar a WhatsApp
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

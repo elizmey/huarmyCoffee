@@ -107,7 +107,7 @@ function App() {
     { id: 'servicios', label: 'Servicios' },
     { id: 'ubicacion', label: 'Ubicaci\u00f3n' },
     { id: 'contact', label: 'Contacto' },
-    { id: 'portal', label: 'Retornar al Portal' },
+    { id: 'portal', label: 'Retornar al Portal', href: 'https://grupozonaequinoccial.com/' },
   ];
 
   return (
@@ -125,7 +125,7 @@ function App() {
             {navItems.map((item) => (
               <a
                 key={item.id}
-                href={`#${item.id}`}
+                href={item.href || `#${item.id}`}
                 style={headerStyles.link}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#d4a373';
@@ -177,7 +177,7 @@ function App() {
           {navItems.map((item) => (
             <a
               key={item.id}
-              href={`#${item.id}`}
+              href={item.href || `#${item.id}`}
               className="mobile-menu-link"
               onClick={() => setMobileMenuOpen(false)}
             >
