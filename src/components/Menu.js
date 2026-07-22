@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { fetchData } from "../f";
 
 const initialMenuData = {
   mar: [
@@ -50,100 +51,21 @@ const initialMenuData = {
   ],
 };
 
-const cloneMenuData = (data) => JSON.parse(JSON.stringify(data));
-
-const formatCategoryText = (items) =>
-  items.map(([name, price]) => `${name} | ${price}`).join("\n");
-
-const parseCategoryText = (text) =>
-  text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const separators = ["|", " - ", "\t", " — ", " —", "—"];
-      for (const separator of separators) {
-        if (line.includes(separator)) {
-          const [name, ...rest] = line.split(separator);
-          return [name.trim(), rest.join(separator).trim()];
-        }
-      }
-
-      return [line, ""];
-    })
-    .filter(([name]) => Boolean(name));
-
 const Menu = () => {
   const [activeCategory, setActiveCategory] = useState("mar");
-  const [menuData, setMenuData] = useState(() => cloneMenuData(initialMenuData));
-  const [bulkEditor, setBulkEditor] = useState({
-    open: false,
-    category: "mar",
-    text: "",
-  });
-  const clickTrackerRef = useRef({});
-  const resetTimersRef = useRef({});
+  const [menuData, setMenuData] = useState(initialMenuData);
 
   useEffect(() => {
-    const timers = resetTimersRef.current;
-
-    return () => {
-      Object.values(timers).forEach((timerId) => clearTimeout(timerId));
+    let active = true;
+    const loadFromFirebase = async () => {
+      const { menu } = await fetchData();
+      if (active && menu) {
+        setMenuData({ ...initialMenuData, ...menu });
+      }
     };
+    loadFromFirebase();
+    return () => { active = false; };
   }, []);
-
-  const openBulkEditor = (category) => {
-    setBulkEditor({
-      open: true,
-      category,
-      text: formatCategoryText(menuData[category] || []),
-    });
-  };
-
-  const closeBulkEditor = () => {
-    setBulkEditor((prev) => ({ ...prev, open: false }));
-  };
-
-  const saveBulkChanges = () => {
-    const nextItems = parseCategoryText(bulkEditor.text);
-
-    setMenuData((prevData) => ({
-      ...prevData,
-      [bulkEditor.category]: nextItems,
-    }));
-
-    closeBulkEditor();
-  };
-
-  const deleteEntireList = () => {
-    setMenuData((prevData) => ({
-      ...prevData,
-      [bulkEditor.category]: [],
-    }));
-
-    closeBulkEditor();
-  };
-
-  const registerTabClick = (category) => {
-    setActiveCategory(category);
-
-    const currentCount = (clickTrackerRef.current[category] || 0) + 1;
-    clickTrackerRef.current[category] = currentCount;
-
-    if (resetTimersRef.current[category]) {
-      clearTimeout(resetTimersRef.current[category]);
-    }
-
-    resetTimersRef.current[category] = setTimeout(() => {
-      clickTrackerRef.current[category] = 0;
-    }, 1200);
-
-    if (currentCount >= 5) {
-      clickTrackerRef.current[category] = 0;
-      clearTimeout(resetTimersRef.current[category]);
-      openBulkEditor(category);
-    }
-  };
 
   const styles = {
     section: {
@@ -231,13 +153,6 @@ const Menu = () => {
       fontStyle: "italic",
       border: "1px dashed #d4a373",
     },
-    editHint: {
-      marginTop: "14px",
-      textAlign: "center",
-      color: "#7b5a43",
-      fontSize: "13px",
-      letterSpacing: "0.2px",
-    },
     compactCategory: {
       padding: "22px",
       marginBottom: "30px",
@@ -290,31 +205,31 @@ const Menu = () => {
           <p style={styles.subtitle}>"El sabor de la memoria..."</p>
 
           <div className="menu-tabs">
-            <button className={activeCategory === "mar" ? "active" : ""} onClick={() => registerTabClick("mar")}>
+            <button className={activeCategory === "mar" ? "active" : ""} onClick={() => setActiveCategory("mar")}>
               MAR
             </button>
-            <button className={activeCategory === "sierra" ? "active" : ""} onClick={() => registerTabClick("sierra")}>
+            <button className={activeCategory === "sierra" ? "active" : ""} onClick={() => setActiveCategory("sierra")}>
               SIERRA
             </button>
             <button
               className={activeCategory === "postres" ? "active" : ""}
-              onClick={() => registerTabClick("postres")}
+              onClick={() => setActiveCategory("postres")}
             >
               POSTRES
             </button>
             <button
               className={activeCategory === "desayunos" ? "active" : ""}
-              onClick={() => registerTabClick("desayunos")}
+              onClick={() => setActiveCategory("desayunos")}
             >
               DESAYUNOS
             </button>
             <button
               className={activeCategory === "calientes" ? "active" : ""}
-              onClick={() => registerTabClick("calientes")}
+              onClick={() => setActiveCategory("calientes")}
             >
               CALIENTES
             </button>
-            <button className={activeCategory === "frias" ? "active" : ""} onClick={() => registerTabClick("frias")}>
+            <button className={activeCategory === "frias" ? "active" : ""} onClick={() => setActiveCategory("frias")}>
               FRIAS
             </button>
           </div>
@@ -365,56 +280,6 @@ const Menu = () => {
           </a>
         </div>
       </div>
-
-      {bulkEditor.open && (
-        <div className="menu-editor-overlay">
-          <div className="menu-editor-card menu-editor-card--large">
-            <div className="menu-editor-header">
-              <div>
-                <p className="menu-editor-kicker">Edicion completa</p>
-                <h3>Editar listado de {bulkEditor.category.toUpperCase()}</h3>
-              </div>
-              <button type="button" className="menu-editor-close" onClick={closeBulkEditor} aria-label="Cerrar editor">
-                x
-              </button>
-            </div>
-
-            <p className="menu-editor-helper">
-              Escribe un item por linea con el formato: <strong>Nombre | Precio</strong>
-            </p>
-
-            <div className="menu-editor-grid">
-              <label className="menu-editor-field menu-editor-field--textarea">
-                <span>Listado completo</span>
-                <textarea
-                  value={bulkEditor.text}
-                  onChange={(event) =>
-                    setBulkEditor((prev) => ({
-                      ...prev,
-                      text: event.target.value,
-                    }))
-                  }
-                  placeholder={"Ejemplo:\nEncebollado | $3.00\nCeviche | $5.50"}
-                />
-              </label>
-            </div>
-
-            <div className="menu-editor-actions menu-editor-actions--spread">
-              <button type="button" className="menu-editor-button danger" onClick={deleteEntireList}>
-                Eliminar listado completo
-              </button>
-              <div className="menu-editor-actions-inline">
-                <button type="button" className="menu-editor-button secondary" onClick={closeBulkEditor}>
-                  Cancelar
-                </button>
-                <button type="button" className="menu-editor-button primary" onClick={saveBulkChanges}>
-                  Guardar listado
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };

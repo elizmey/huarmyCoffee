@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BadgePercent,
@@ -6,21 +6,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
-  LockKeyhole,
   Plus,
-  Save,
   Sparkles,
   Star,
-  Trash2,
   Truck,
-  Upload,
   Users,
   UtensilsCrossed,
   X,
 } from "lucide-react";
+import { fetchData, savePromociones } from "../f";
 import "../assets/css/style.css";
 
-const STORAGE_KEY = "huarmy_promociones_editor_v1";
 const WHATSAPP_NUMBER = "593983436356";
 
 const createDefaultPromotions = () => [
@@ -101,71 +97,10 @@ const defaultHighlight = {
   statThreeValue: "Flexible",
 };
 
-const loadSavedState = () => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.promotions)) {
-      return null;
-    }
-
-    const defaults = createDefaultPromotions();
-    const packageDefaults = createDefaultPackages();
-
-    const promotions = parsed.promotions.map((promotion, index) => ({
-      ...defaults[index % defaults.length],
-      ...promotion,
-      image: isPersistableImage(promotion.image) ? promotion.image : defaults[index % defaults.length].image,
-    }));
-    const packages = Array.isArray(parsed.packages)
-      ? parsed.packages.map((pkg, index) => ({
-          ...packageDefaults[index % packageDefaults.length],
-          ...pkg,
-          items: Array.isArray(pkg.items) ? pkg.items.filter((item) => typeof item === "string") : packageDefaults[index % packageDefaults.length].items,
-        }))
-      : createDefaultPackages();
-    const featuredPromotionId =
-      typeof parsed.featuredPromotionId === "string" && promotions.some((promotion) => promotion.id === parsed.featuredPromotionId)
-        ? parsed.featuredPromotionId
-        : promotions[0]?.id || "";
-
-    const savedHighlight = { ...defaultHighlight, ...(parsed.highlight || {}) };
-    const normalizePremium = (value) =>
-      typeof value === "string" && value.trim().toLowerCase() === "premium" ? "Equilibrda" : value;
-    savedHighlight.eyebrow = normalizePremium(savedHighlight.eyebrow);
-    savedHighlight.badgePrimary = normalizePremium(savedHighlight.badgePrimary);
-    savedHighlight.description =
-      typeof savedHighlight.description === "string"
-        ? savedHighlight.description.replace(/premium/gi, "equilibrda")
-        : savedHighlight.description;
-
-    return {
-      promotions,
-      packages,
-      highlight: savedHighlight,
-      featuredPromotionId,
-    };
-  } catch {
-    return null;
-  }
-};
-
 const getPromotionIcon = (index) => {
   const icons = [UtensilsCrossed, Users, Truck];
   return icons[index % icons.length];
 };
-
-const isPersistableImage = (value) =>
-  typeof value === "string" &&
-  (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/") || value.startsWith("data:image/"));
 
 const parseDateAtLocalMidnight = (value) => {
   if (typeof value !== "string" || !value) {
@@ -176,14 +111,6 @@ const parseDateAtLocalMidnight = (value) => {
     return null;
   }
   return new Date(year, month - 1, day);
-};
-
-const getTodayInputValue = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
 };
 
 const isPromotionActive = (promotion, now = new Date()) => {
@@ -228,64 +155,10 @@ const getPromotionScheduleLabel = (promotion) => {
   return promotion.duration || "Sin fecha";
 };
 
-const createPromotionId = () => `promo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-const createNewPromotion = (index = 0) => {
-  const defaults = createDefaultPromotions();
-  const fallback = defaults[index % defaults.length];
-
-  return {
-    id: createPromotionId(),
-    title: "Nueva promocion",
-    type: fallback.type,
-    duration: "Disponible esta semana",
-    startDate: "",
-    endDate: "",
-    description: "Describe aqui los beneficios de esta promocion.",
-    tag: "Nuevo",
-    detail: "Agrega detalles para que el cliente entienda la oferta.",
-    image: fallback.image,
-  };
-};
-
-const createPackageId = () => `pkg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-const createNewPackage = () => ({
-  id: createPackageId(),
-  title: "Nuevo paquete",
-  price: "Desde $0.00",
-  items: ["Beneficio 1", "Beneficio 2", "Beneficio 3"],
-});
-
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(reader.error || new Error("No se pudo leer la imagen."));
-    reader.readAsDataURL(file);
-  });
-
-const clonePromotions = (list) => list.map((promotion) => ({ ...promotion }));
-const clonePackages = (list) => list.map((pkg) => ({ ...pkg, items: Array.isArray(pkg.items) ? [...pkg.items] : [] }));
-const isPlaceholderPromotionTitle = (value) => typeof value === "string" && value.trim().toLowerCase() === "nueva promocion";
-const isPlaceholderPromotionDescription = (value) =>
-  typeof value === "string" && value.trim().toLowerCase() === "describe aqui los beneficios de esta promocion.";
-
 const Promociones = () => {
-  const savedState = loadSavedState();
-  const initialPromotions = savedState?.promotions || createDefaultPromotions();
-  const initialPackages = savedState?.packages || createDefaultPackages();
-  const initialHighlight = savedState?.highlight || defaultHighlight;
-  const initialFeaturedPromotionId =
-    savedState?.featuredPromotionId && initialPromotions.some((promotion) => promotion.id === savedState.featuredPromotionId)
-      ? savedState.featuredPromotionId
-      : initialPromotions[0]?.id || "";
-
-  const [promotions, setPromotions] = useState(initialPromotions);
-  const [packages, setPackages] = useState(initialPackages);
-  const [highlight] = useState(initialHighlight);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editorPage, setEditorPage] = useState("promotions");
+  const [promotions, setPromotions] = useState(createDefaultPromotions());
+  const [packages, setPackages] = useState(createDefaultPackages());
+  const [highlight] = useState(defaultHighlight);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [quoteContext, setQuoteContext] = useState({ type: "", title: "" });
   const [quoteForm, setQuoteForm] = useState({
@@ -295,54 +168,57 @@ const Promociones = () => {
     guests: "",
     message: "",
   });
-  const [selectedPromotionId, setSelectedPromotionId] = useState(initialPromotions[0]?.id || "promo-1");
-  const [featuredPromotionId, setFeaturedPromotionId] = useState(initialFeaturedPromotionId);
-  const [imageSourceMode, setImageSourceMode] = useState("url");
-  const secretClickCountRef = useRef(0);
-  const secretTimerRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const [selectedPromotionId, setSelectedPromotionId] = useState("promo-1");
+  const [featuredPromotionId, setFeaturedPromotionId] = useState("");
   const promotionsGridRef = useRef(null);
-  const uploadedImageUrlsRef = useRef({});
   const [canScrollPromotionsLeft, setCanScrollPromotionsLeft] = useState(false);
   const [canScrollPromotionsRight, setCanScrollPromotionsRight] = useState(false);
-  const hasMountedRef = useRef(false);
-  const lastSavedStateRef = useRef({
-    promotions: clonePromotions(initialPromotions),
-    packages: clonePackages(initialPackages),
-    highlight: { ...initialHighlight },
-    featuredPromotionId: initialFeaturedPromotionId,
-  });
+  const todayInputValue = (() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = `${now.getMonth() + 1}`.padStart(2, "0");
+    const day = `${now.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  })();
 
   useEffect(() => {
-    const uploadedImageUrls = uploadedImageUrlsRef.current;
+    let active = true;
+    const loadFromFirebase = async () => {
+      const { promociones } = await fetchData();
+      if (active && promociones && Array.isArray(promociones.promotions)) {
+        const defaults = createDefaultPromotions();
+        const packageDefaults = createDefaultPackages();
 
-    return () => {
-      Object.values(uploadedImageUrls).forEach((url) => {
-        if (typeof url === "string" && url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
-    };
-  }, []);
+        const loadedPromotions = promociones.promotions.map((promotion, index) => ({
+          ...defaults[index % defaults.length],
+          ...promotion,
+        }));
+        const loadedPackages = Array.isArray(promociones.packages)
+          ? promociones.packages.map((pkg, index) => ({
+              ...packageDefaults[index % packageDefaults.length],
+              ...pkg,
+              items: Array.isArray(pkg.items) ? pkg.items.filter((item) => typeof item === "string") : packageDefaults[index % packageDefaults.length].items,
+            }))
+          : createDefaultPackages();
+        const loadedFeaturedId =
+          typeof promociones.featuredPromotionId === "string" && loadedPromotions.some((p) => p.id === promociones.featuredPromotionId)
+            ? promociones.featuredPromotionId
+            : loadedPromotions[0]?.id || "";
 
-  useEffect(() => {
-    return () => {
-      if (secretTimerRef.current) {
-        clearTimeout(secretTimerRef.current);
+        setPromotions(loadedPromotions);
+        setPackages(loadedPackages);
+        setFeaturedPromotionId(loadedFeaturedId);
+        setSelectedPromotionId(loadedFeaturedId);
       }
     };
+    loadFromFirebase();
+    return () => { active = false; };
   }, []);
 
   const selectedPromotion = promotions.find((promotion) => promotion.id === selectedPromotionId) || promotions[0] || null;
   const visiblePromotions = promotions.filter((promotion) => isPromotionActive(promotion));
   const featuredPromotion =
     visiblePromotions.find((promotion) => promotion.id === featuredPromotionId) || visiblePromotions[0] || promotions[0] || null;
-  const featuredPromotionTitle =
-    featuredPromotion && !isPlaceholderPromotionTitle(featuredPromotion.title) ? featuredPromotion.title : highlight.title;
-  const featuredPromotionDescription =
-    featuredPromotion && !isPlaceholderPromotionDescription(featuredPromotion.description)
-      ? featuredPromotion.description
-      : highlight.description;
   const visibleOrderedPromotions = [
     ...visiblePromotions.filter((promotion) => promotion.id === featuredPromotionId),
     ...visiblePromotions.filter((promotion) => promotion.id !== featuredPromotionId),
@@ -351,7 +227,6 @@ const Promociones = () => {
   const hasPackages = packages.length > 0;
   const showHero = hasPromotions || hasPackages;
   const showEmptyPromotionsState = !hasPromotions && !hasPackages;
-  const todayInputValue = getTodayInputValue();
 
   const scrollPromotions = (direction) => {
     const grid = promotionsGridRef.current;
@@ -421,147 +296,6 @@ const Promociones = () => {
     }
   }, [promotions, featuredPromotionId]);
 
-  const buildSerializableEditorState = useCallback(() => {
-    const defaultPromotions = createDefaultPromotions();
-    const serializablePromotions = promotions.map((promotion, index) => ({
-      ...promotion,
-      image: isPersistableImage(promotion.image) ? promotion.image : defaultPromotions[index]?.image || "",
-    }));
-    const serializablePackages = packages.map((pkg) => ({
-      ...pkg,
-      items: Array.isArray(pkg.items)
-        ? pkg.items.map((item) => `${item}`.trim()).filter(Boolean)
-        : [],
-    }));
-    const nextFeaturedId =
-      serializablePromotions.find((promotion) => promotion.id === featuredPromotionId)?.id || serializablePromotions[0]?.id || "";
-
-    return {
-      promotions: serializablePromotions,
-      packages: serializablePackages,
-      highlight,
-      featuredPromotionId: nextFeaturedId,
-    };
-  }, [promotions, packages, highlight, featuredPromotionId]);
-
-  const persistEditorState = useCallback(({ closeEditor = false } = {}) => {
-    const nextState = buildSerializableEditorState();
-
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
-      lastSavedStateRef.current = {
-        promotions: clonePromotions(nextState.promotions),
-        packages: clonePackages(nextState.packages),
-        highlight: { ...nextState.highlight },
-        featuredPromotionId: nextState.featuredPromotionId,
-      };
-      setFeaturedPromotionId(nextState.featuredPromotionId);
-    } catch (error) {
-      console.warn("No se pudo guardar el editor de promociones en localStorage:", error);
-    }
-
-    if (closeEditor) {
-      setEditorOpen(false);
-      setEditorPage("promotions");
-    }
-  }, [buildSerializableEditorState]);
-
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-
-    persistEditorState();
-  }, [promotions, packages, highlight, featuredPromotionId, persistEditorState]);
-
-  const updateSelectedPromotion = (field, value) => {
-    setPromotions((prev) =>
-      prev.map((promotion) =>
-        promotion.id === selectedPromotionId
-          ? {
-              ...promotion,
-              [field]: value,
-            }
-          : promotion
-      )
-    );
-  };
-
-  const handleSecretOpen = () => {
-    secretClickCountRef.current += 1;
-
-    if (secretTimerRef.current) {
-      clearTimeout(secretTimerRef.current);
-    }
-
-    secretTimerRef.current = setTimeout(() => {
-      secretClickCountRef.current = 0;
-    }, 1200);
-
-    if (secretClickCountRef.current >= 5) {
-      secretClickCountRef.current = 0;
-      setEditorPage("promotions");
-      setEditorOpen(true);
-    }
-  };
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedPromotion) {
-      return;
-    }
-
-    try {
-      const nextImage = await readFileAsDataUrl(file);
-      updateSelectedPromotion("image", nextImage);
-      setImageSourceMode("upload");
-    } catch (error) {
-      console.warn("No se pudo cargar la imagen seleccionada:", error);
-    }
-  };
-
-  const addPromotion = () => {
-    const newPromotion = createNewPromotion(promotions.length);
-    setPromotions((prev) => [...prev, newPromotion]);
-    setSelectedPromotionId(newPromotion.id);
-    if (!featuredPromotionId) {
-      setFeaturedPromotionId(newPromotion.id);
-    }
-    setImageSourceMode("url");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const removeSelectedPromotion = () => {
-    if (!selectedPromotion) {
-      return;
-    }
-
-    const selectedId = selectedPromotion.id;
-    const uploadedImageUrl = uploadedImageUrlsRef.current[selectedId];
-    if (uploadedImageUrl && uploadedImageUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(uploadedImageUrl);
-    }
-    delete uploadedImageUrlsRef.current[selectedId];
-
-    const nextPromotions = promotions.filter((promotion) => promotion.id !== selectedId);
-    setPromotions(nextPromotions);
-    if (featuredPromotionId === selectedId) {
-      setFeaturedPromotionId(nextPromotions[0]?.id || "");
-    }
-    setImageSourceMode("url");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-
-  const saveEditorChanges = () => {
-    persistEditorState({ closeEditor: true });
-  };
-
   const openQuoteModal = (type, title) => {
     setQuoteContext({ type, title });
     setQuoteModalOpen(true);
@@ -597,35 +331,6 @@ const Promociones = () => {
     setQuoteModalOpen(false);
   };
 
-  const updatePackageField = (packageId, field, value) => {
-    setPackages((prev) =>
-      prev.map((pkg) =>
-        pkg.id === packageId
-          ? {
-              ...pkg,
-              [field]: value,
-            }
-          : pkg
-      )
-    );
-  };
-
-  const updatePackageItems = (packageId, rawValue) => {
-    const items = rawValue
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
-    updatePackageField(packageId, "items", items);
-  };
-
-  const addPackage = () => {
-    setPackages((prev) => [...prev, createNewPackage()]);
-  };
-
-  const removePackage = (packageId) => {
-    setPackages((prev) => prev.filter((pkg) => pkg.id !== packageId));
-  };
-
   return (
     <section id="promociones" className="promotions-section">
       <div className="promotions-container">
@@ -638,7 +343,7 @@ const Promociones = () => {
             transition={{ duration: 0.8 }}
           >
             <div className="promotions-copy">
-              <p className="promotions-kicker promotions-kicker--secret" onClick={handleSecretOpen}>
+              <p className="promotions-kicker">
                 {highlight.eyebrow}
               </p>
               <h2 className="promotions-title">
@@ -670,8 +375,8 @@ const Promociones = () => {
 
               <div className="promotions-highlight-main">
                 <p>Promocion destacada</p>
-                <h3>{featuredPromotionTitle}</h3>
-                <p className="promotions-highlight-description">{featuredPromotionDescription}</p>
+                <h3>{featuredPromotion?.title || highlight.title}</h3>
+                <p className="promotions-highlight-description">{featuredPromotion?.description || highlight.description}</p>
                 <div className="promotions-stat-row">
                   <div>
                     <strong>{highlight.statOneLabel}</strong>
@@ -837,7 +542,7 @@ const Promociones = () => {
             viewport={{ once: false }}
             transition={{ duration: 0.55 }}
           >
-            <p className="promotions-kicker promotions-kicker--secret" onClick={handleSecretOpen}>
+            <p className="promotions-kicker">
               PROMOCIONES
             </p>
             <h3>No hay ofertas o promociones disponibles por el momento</h3>
@@ -846,337 +551,6 @@ const Promociones = () => {
         )}
 
       </div>
-
-      {editorOpen && (
-        <div className="promotions-editor-overlay">
-          <div className="promotions-editor-card">
-            <div className="promotions-editor-header">
-              <div>
-                <p className="promotions-editor-kicker">
-                  <LockKeyhole size={14} />
-                  Panel oculto
-                </p>
-                <h3>Edicion de promociones</h3>
-                <p className="promotions-editor-helper">
-                  Cambia el tipo, la duracion y la imagen sin usar base de datos. Puedes pegar una URL o subir un archivo local.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="promotions-editor-close"
-                onClick={() => {
-                  setEditorOpen(false);
-                  setEditorPage("promotions");
-                }}
-                aria-label="Cerrar editor"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="promotions-editor-mini-menu">
-              <button
-                type="button"
-                className={`promotions-editor-tab ${editorPage === "promotions" ? "active" : ""}`}
-                onClick={() => setEditorPage("promotions")}
-              >
-                Promociones
-              </button>
-              <button
-                type="button"
-                className={`promotions-editor-tab ${editorPage === "packages" ? "active" : ""}`}
-                onClick={() => setEditorPage("packages")}
-              >
-                Paquetes
-              </button>
-            </div>
-
-            {editorPage === "promotions" ? (
-              <div className="promotions-editor-layout">
-                <aside className="promotions-editor-list">
-                  <div className="promotions-editor-list-header">
-                    <h4>Promociones</h4>
-                    <div className="promotions-editor-list-actions promotions-editor-list-actions--inline" style={{gap: '8px', display: 'flex', background: 'none', boxShadow: 'none', padding: 0}}>
-                      <button
-  type="button"
-  onClick={addPromotion}
-  aria-label="Agregar promocion"
-  title="Agregar promocion"
-  style={{
-    backgroundColor: "#22c55e",
-    border: "none",
-    padding: "6px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}
->
-  <Plus size={14} color="#fff" />
-</button>
-
-<button
-  type="button"
-  onClick={removeSelectedPromotion}
-  disabled={!selectedPromotion}
-  aria-label="Eliminar promocion seleccionada"
-  title="Eliminar promocion seleccionada"
-  style={{
-    backgroundColor: "#ef4444",
-    border: "none",
-    padding: "6px",
-    borderRadius: "6px",
-    cursor: selectedPromotion ? "pointer" : "not-allowed",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    opacity: selectedPromotion ? 1 : 0.5
-  }}
->
-  <Trash2 size={14} color="#fff" />
-</button>
-                    </div>
-                  </div>
-                  {promotions.map((promotion) => (
-                    <button
-                      type="button"
-                      key={promotion.id}
-                      className={`promotions-editor-list-item ${promotion.id === selectedPromotionId ? "active" : ""} ${promotion.id === featuredPromotionId ? "featured" : ""}`}
-                      onClick={() => setSelectedPromotionId(promotion.id)}
-                    >
-                      <img src={promotion.image} alt={promotion.title} />
-                      <span>
-                        <strong>{promotion.title}</strong>
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          className={`promotions-editor-featured ${promotion.id === featuredPromotionId ? "active" : ""}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setFeaturedPromotionId(promotion.id);
-                            setSelectedPromotionId(promotion.id);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              setFeaturedPromotionId(promotion.id);
-                              setSelectedPromotionId(promotion.id);
-                            }
-                          }}
-                          title="Marcar como promocion destacada"
-                          aria-label="Marcar como promocion destacada"
-                        >
-                          <Star size={14} />
-                          {promotion.id === featuredPromotionId ? "Destacada" : "Destacar"}
-                        </span>
-                        <small>{promotion.type} | {getPromotionScheduleLabel(promotion)}</small>
-                      </span>
-                    </button>
-                  ))}
-
-                  {/* Botón 'Restaurar ultimo guardado' eliminado */}
-                </aside>
-
-                {selectedPromotion && (
-                  <div className="promotions-editor-form">
-                    <div className="promotions-editor-grid">
-                      <label className="promotions-editor-field--span-2">
-                        <span>Nombre de la promocion</span>
-                        <input
-                          type="text"
-                          value={selectedPromotion.title}
-                          onChange={(event) => updateSelectedPromotion("title", event.target.value)}
-                        />
-                      </label>
-
-                      <label className="promotions-editor-field--span-2">
-                        <span>Tipo de promocion</span>
-                        <input
-                          type="text"
-                          value={selectedPromotion.type}
-                          onChange={(event) => updateSelectedPromotion("type", event.target.value)}
-                        />
-                      </label>
-
-
-                      <div style={{ display: "flex", gap: "1rem", flexWrap: "nowrap", marginBottom: "1.5rem" }}>
-                        <label style={{ flex: 1, minWidth: 180 }}>
-                          <span>Fecha de inicio</span>
-                          <input
-                            type="date"
-                            value={selectedPromotion.startDate || ""}
-                            min={todayInputValue}
-                            onChange={(event) => updateSelectedPromotion("startDate", event.target.value)}
-                          />
-                        </label>
-                        <label style={{ flex: 1, minWidth: 180 }}>
-                          <span>Fecha de finalizacion</span>
-                          <input
-                            type="date"
-                            value={selectedPromotion.endDate || ""}
-                            min={selectedPromotion.startDate || todayInputValue}
-                            onChange={(event) => updateSelectedPromotion("endDate", event.target.value)}
-                          />
-                        </label>
-                        <label style={{ flex: 1, minWidth: 180 }}>
-                          <span>Etiqueta breve</span>
-                          <input
-                            type="text"
-                            value={selectedPromotion.tag}
-                            onChange={(event) => updateSelectedPromotion("tag", event.target.value)}
-                          />
-                        </label>
-                      </div>
-
-                      <label className="promotions-editor-field--wide">
-                        <span>Descripcion</span>
-                        <textarea
-                          value={selectedPromotion.description}
-                          onChange={(event) => updateSelectedPromotion("description", event.target.value)}
-                        />
-                      </label>
-
-                      <label className="promotions-editor-field--wide">
-                        <span>Detalle</span>
-                        <textarea
-                          value={selectedPromotion.detail}
-                          onChange={(event) => updateSelectedPromotion("detail", event.target.value)}
-                        />
-                      </label>
-
-                      <div className="promotions-editor-field--wide">
-                        <span className="promotions-editor-image-title">Imagen de la promocion</span>
-                        <div className="promotions-editor-image-switch">
-                          <button
-                            type="button"
-                            className={imageSourceMode === "url" ? "active" : ""}
-                            onClick={() => setImageSourceMode("url")}
-                          >
-                            URL de internet
-                          </button>
-                          <button
-                            type="button"
-                            className={imageSourceMode === "upload" ? "active" : ""}
-                            onClick={() => setImageSourceMode("upload")}
-                          >
-                            Subir archivo
-                          </button>
-                        </div>
-
-                        {imageSourceMode === "url" ? (
-                          <label className="promotions-editor-url">
-                            <span>Pega la URL de la imagen</span>
-                            <input
-                              type="url"
-                              value={selectedPromotion.image}
-                              onChange={(event) => updateSelectedPromotion("image", event.target.value)}
-                              placeholder="https://..."
-                            />
-                          </label>
-                        ) : (
-                          <label className="promotions-editor-upload">
-                            <span>
-                              <Upload size={15} />
-                              Cargar imagen local
-                            </span>
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFileUpload}
-                            />
-                          </label>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="promotions-editor-preview">
-                      <h4>Vista previa</h4>
-                      <div className="promotions-editor-preview-card">
-                        <img src={selectedPromotion.image} alt={selectedPromotion.title} />
-                        <div>
-                          <span>{selectedPromotion.type}</span>
-                          <strong>{selectedPromotion.title}</strong>
-                          <p>{getPromotionScheduleLabel(selectedPromotion)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="promotions-editor-packages-page">
-                <div className="promotions-editor-packages">
-                  <h4>Editor de paquetes</h4>
-                  <div className="promotions-editor-packages-actions" style={{gap: '8px', display: 'flex', background: 'none', boxShadow: 'none', padding: 0}}>
-                    <button type="button" style={{background: 'none', boxShadow: 'none', padding: 0, border: 'none'}} onClick={addPackage}>
-                      <Plus size={14} />
-                      Nuevo paquete
-                    </button>
-                    {/* Botón 'Restaurar ultimo guardado' eliminado */}
-                  </div>
-                  <div className="promotions-editor-packages-grid">
-                    {packages.map((pkg) => (
-                      <div className="promotions-editor-package-card" key={pkg.id}>
-                        <label>
-                          <span>Nombre del paquete</span>
-                          <input
-                            type="text"
-                            value={pkg.title}
-                            onChange={(event) => updatePackageField(pkg.id, "title", event.target.value)}
-                          />
-                        </label>
-                        <label>
-                          <span>Precio</span>
-                          <input
-                            type="text"
-                            value={pkg.price}
-                            onChange={(event) => updatePackageField(pkg.id, "price", event.target.value)}
-                          />
-                        </label>
-                        <label>
-                          <span>Beneficios (una linea por item)</span>
-                          <textarea
-                            value={pkg.items.join("\n")}
-                            onChange={(event) => updatePackageItems(pkg.id, event.target.value)}
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          className="promotions-editor-reset promotions-editor-reset--danger promotions-editor-package-remove"
-                          onClick={() => removePackage(pkg.id)}
-                        >
-                          <Trash2 size={14} />
-                          Eliminar paquete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="promotions-editor-actions">
-              <button
-                type="button"
-                className="promotions-editor-button secondary"
-                onClick={() => {
-                  setEditorOpen(false);
-                  setEditorPage("promotions");
-                }}
-              >
-                Cerrar
-              </button>
-              <button type="button" className="promotions-editor-button primary" onClick={saveEditorChanges}>
-                <Save size={16} />
-                Guardar cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {quoteModalOpen && (
         <div className="promotions-quote-overlay" onClick={closeQuoteModal}>
@@ -1215,7 +589,7 @@ const Promociones = () => {
                   rows={4}
                   value={quoteForm.message}
                   onChange={(event) => updateQuoteField("message", event.target.value)}
-                  placeholder="Cuéntanos que necesitas para tu reserva o cotizacion."
+                  placeholder="Cuentanos que necesitas para tu reserva o cotizacion."
                 />
               </label>
 

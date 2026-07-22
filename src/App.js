@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Menu as MenuIcon, X } from 'lucide-react';
+import { Menu as MenuIcon, X, Settings } from 'lucide-react';
 import './App.css';
 
 import Home from './components/Home';
@@ -11,9 +11,11 @@ import Nosotros from './components/Nosotros';
 import Servicios from './components/Servicios';
 import Promociones from './components/Promociones';
 import Ubicacion from './components/Ubicacion';
+import AdminPanel from './components/AdminPanel';
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
     if (!mobileMenuOpen) {
@@ -141,6 +143,32 @@ function App() {
                 {item.label}
               </a>
             ))}
+            <button
+              type="button"
+              onClick={() => setAdminOpen(true)}
+              style={{
+                ...headerStyles.link,
+                background: 'transparent',
+                border: '1px solid transparent',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                opacity: 0.5,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.backgroundColor = 'rgba(212,163,115,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.5';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+              title="Panel de administracion"
+            >
+              <Settings size={14} />
+            </button>
           </nav>
           <button
             type="button"
@@ -184,6 +212,27 @@ function App() {
               {item.label}
             </a>
           ))}
+          <button
+            type="button"
+            className="mobile-menu-link"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setAdminOpen(true);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginTop: '10px',
+              borderTop: '1px solid rgba(245,232,211,0.15)',
+              paddingTop: '14px',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            <Settings size={16} />
+            Administrador
+          </button>
         </nav>
       </aside>
 
@@ -210,6 +259,8 @@ function App() {
           Todos los derechos reservados \u00a9 2026 Huarmy Coffee
         </p>
       </footer>
+
+      {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
     </div>
   );
 }
