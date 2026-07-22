@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
-  Plus,
   Sparkles,
   Star,
   Truck,
@@ -14,7 +13,7 @@ import {
   UtensilsCrossed,
   X,
 } from "lucide-react";
-import { fetchData, savePromociones } from "../f";
+import { fetchData } from "../f";
 import "../assets/css/style.css";
 
 const WHATSAPP_NUMBER = "593983436356";
@@ -215,7 +214,6 @@ const Promociones = () => {
     return () => { active = false; };
   }, []);
 
-  const selectedPromotion = promotions.find((promotion) => promotion.id === selectedPromotionId) || promotions[0] || null;
   const visiblePromotions = promotions.filter((promotion) => isPromotionActive(promotion));
   const featuredPromotion =
     visiblePromotions.find((promotion) => promotion.id === featuredPromotionId) || visiblePromotions[0] || promotions[0] || null;

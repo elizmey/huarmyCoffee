@@ -1,70 +1,109 @@
-# Getting Started with Create React App
+# Huarmy Coffee
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Pagina web de Huarmy Coffee - Menu, promociones y cotizaciones por WhatsApp.
 
-## Available Scripts
+## Stack
 
-In the project directory, you can run:
+- React 19
+- Framer Motion (animaciones)
+- Lucide React (iconos)
+- Firebase Firestore (base de datos en la nube, solo para admin)
 
-### `npm start`
+## Ejecutar localmente
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+npm install
+npm start
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Abre [http://localhost:3000](http://localhost:3000)
 
-### `npm test`
+## Subir al host
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm run build
+```
 
-### `npm run build`
+Sube la carpeta `build/` a Netlify, Vercel o GitHub Pages.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Panel de Administrador
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+La dueña puede cambiar el menu y las promociones desde el navegador.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Como acceder
 
-### `npm run eject`
+- **Celular**: tocar el icono hamburguesa → "Administrador"
+- **Computadora**: tocar el icono de engranaje arriba a la derecha
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Contrasena
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+huarmy2026
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Para cambiar la contrasena, editar `src/components/AdminPanel.js` linea 4:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```js
+const ADMIN_PASSWORD = "tu_nueva_contrasena";
+```
 
-## Learn More
+### Que se puede editar
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **Menu**: platos, precios, agregar/eliminar items por categoria
+- **Promociones**: titulo, tipo, descripcion, imagen (URL), fechas, paquetes
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Como funciona
 
-### Code Splitting
+1. La dueña edita desde el admin y toca "Guardar todos los cambios"
+2. Los datos se guardan en Firebase Firestore
+3. La pagina se recarga sola
+4. Todos los visitantes ven los cambios
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Firebase
 
-### Analyzing the Bundle Size
+El proyecto usa Firebase Firestore para guardar los datos del admin.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Configuracion
 
-### Making a Progressive Web App
+El archivo `src/f.js` contiene la configuracion de Firebase. No cambiar el nombre del archivo.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Reglas de Firestore
 
-### Advanced Configuration
+En Firebase Console → Firestore Database → Reglas:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
 
-### Deployment
+### Estructura de datos en Firestore
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```
+huarmy/
+  menu/           → { mar: [...], sierra: [...], postres: [...], ... }
+  promociones/    → { promotions: [...], packages: [...], highlight: {...}, featuredPromotionId: "..." }
+```
 
-### `npm run build` fails to minify
+## Archivos importantes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| Archivo | Funcion |
+|---|---|
+| `src/App.js` | Layout principal, header, navegacion, admin button |
+| `src/components/Menu.js` | Seccion de menu (solo lectura) |
+| `src/components/Promociones.js` | Seccion de promociones (solo lectura) |
+| `src/components/AdminPanel.js` | Panel de administrador (edicion) |
+| `src/f.js` | Configuracion y funciones de Firebase |
+| `src/assets/css/style.css` | Estilos globales |
+
+## Seguridad
+
+- El panel de admin tiene contrasena
+- Las reglas de Firestore estan abiertas (proyecto personal)
+- No hay datos sensibles en el repositorio
+- Las imagenes se guardan como URLs, no como archivos

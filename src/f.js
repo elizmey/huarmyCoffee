@@ -48,3 +48,26 @@ export const savePromociones = async (promoData) => {
     return false;
   }
 };
+
+export const fetchPassword = async () => {
+  try {
+    const configDoc = await getDoc(doc(db, "huarmy", "config"));
+    if (configDoc.exists() && configDoc.data().password) {
+      return configDoc.data().password;
+    }
+    return null;
+  } catch (error) {
+    console.warn("Error al leer contrasena:", error);
+    return null;
+  }
+};
+
+export const savePassword = async (password) => {
+  try {
+    await setDoc(doc(db, "huarmy", "config"), { password });
+    return true;
+  } catch (error) {
+    console.warn("Error al guardar contrasena:", error);
+    return false;
+  }
+};

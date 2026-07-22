@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Lock, Save, Plus, Trash2, ChevronDown, ChevronUp, LogOut } from "lucide-react";
-import { fetchData, saveMenu, savePromociones } from "../f";
-
-const MENU_STORAGE_KEY = "huarmy_menu_v1";
-const PROMO_STORAGE_KEY = "huarmy_promociones_editor_v1";
-const ADMIN_PASSWORD = "huarmy2026";
+import { fetchData, saveMenu, savePromociones, fetchPassword, savePassword } from "../f";
 
 const defaultMenuData = {
   mar: [
@@ -153,10 +149,14 @@ const AdminPanel = ({ onClose }) => {
   const [featuredPromotionId, setFeaturedPromotionId] = useState("");
   const [selectedPromoIndex, setSelectedPromoIndex] = useState(0);
   const [saveMessage, setSaveMessage] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
       const { menu, promociones } = await fetchData();
+      const password = await fetchPassword();
+
+      setAdminPassword(password || "");
 
       if (menu) {
         setMenuData({ ...defaultMenuData, ...menu });
@@ -177,11 +177,20 @@ const AdminPanel = ({ onClose }) => {
     loadData();
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
+    if (!adminPassword) {
+      const password = await fetchPassword();
+      if (password) {
+        setAdminPassword(password);
+      }
+    }
+    const storedPassword = adminPassword || await fetchPassword();
+    if (storedPassword && passwordInput === storedPassword) {
       setAuthenticated(true);
       setPasswordError("");
+    } else if (!storedPassword) {
+      setPasswordError("No hay contrasena configurada");
     } else {
       setPasswordError("Contrasena incorrecta");
     }
