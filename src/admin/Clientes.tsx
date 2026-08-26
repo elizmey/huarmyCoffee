@@ -32,7 +32,7 @@ const Clientes = () => {
       if (editing) {
         await adminFetch(`/clientes/${editing.id}`, { method: 'PATCH', body: JSON.stringify(form) });
       } else {
-        await adminFetch('/clientes', { method: 'POST', body: JSON.stringify({ ...form, created_at: new Date().toISOString().split('T')[0] }) });
+        await adminFetch('/clientes', { method: 'POST', body: JSON.stringify(form) });
       }
       setShowModal(false);
       fetchItems();

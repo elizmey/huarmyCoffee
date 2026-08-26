@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 
-import { apiUrl } from '../api';
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const emptyForm = { asunto: '', mensaje: '', destinatario: 'todos', activo: true };
 
@@ -17,9 +17,7 @@ const Comunicacion = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/comunicaciones'), { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList('/comunicaciones'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -38,9 +36,9 @@ const Comunicacion = () => {
     e.preventDefault();
     try {
       if (editing) {
-        await fetch(apiUrl(`/comunicaciones/${editing.id}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(form) });
+        await adminFetch(`/comunicaciones/${editing.id}`, { method: 'PATCH', body: JSON.stringify(form) });
       } else {
-        await fetch(apiUrl('/comunicaciones'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify({ ...form, fecha_publicacion: new Date().toISOString().split('T')[0] }) });
+        await adminFetch('/comunicaciones', { method: 'POST', body: JSON.stringify({ ...form, fecha_publicacion: new Date().toISOString().split('T')[0] }) });
       }
     } catch (err) {
       console.error(err);
@@ -52,7 +50,7 @@ const Comunicacion = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar esta comunicación?')) {
       try {
-        await fetch(apiUrl(`/comunicaciones/${id}`), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
+        await adminFetch(`/comunicaciones/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.error(err);
       }

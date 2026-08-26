@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: huarmy_db
       POSTGRES_USER: huarmy_user
-      POSTGRES_PASSWORD: HuarmyPassword2026
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-HuarmyPassword2026}
     ports:
       - "5432:5432"
     volumes:

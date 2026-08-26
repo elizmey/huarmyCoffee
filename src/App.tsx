@@ -32,6 +32,9 @@ import GaleriaAdmin from './admin/GaleriaAdmin';
 import Configuracion from './admin/Configuracion';
 import PromocionesAdmin from './admin/PromocionesAdmin';
 import Usuarios from './admin/Usuarios';
+import MisionVision from './admin/MisionVision';
+import ForgotPassword from './admin/ForgotPassword';
+import ResetPassword from './admin/ResetPassword';
 
 import Portal from './portal/Portal';
 import Trabaja from './components/Trabaja';
@@ -154,6 +157,8 @@ function App() {
     return (
       <Routes>
         <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/reset-password" element={<ResetPassword />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="servicios" element={<ServiciosAdmin />} />
@@ -171,6 +176,7 @@ function App() {
           <Route path="scorecard" element={<Scorecard />} />
           <Route path="configuracion" element={<Configuracion />} />
           <Route path="promociones" element={<PromocionesAdmin />} />
+          <Route path="mision-vision" element={<MisionVision />} />
           <Route path="usuarios" element={<Usuarios />} />
         </Route>
       </Routes>

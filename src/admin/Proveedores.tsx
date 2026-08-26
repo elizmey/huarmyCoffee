@@ -28,7 +28,7 @@ const Proveedores = () => {
       if (editing) {
         await adminFetch(`/proveedores/${editing.id}`, { method: 'PATCH', body: JSON.stringify(form) });
       } else {
-        await adminFetch('/proveedores', { method: 'POST', body: JSON.stringify({ ...form, created_at: new Date().toISOString().split('T')[0] }) });
+        await adminFetch('/proveedores', { method: 'POST', body: JSON.stringify(form) });
       }
       setShowModal(false);
       fetchItems();

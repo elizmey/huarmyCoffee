@@ -31,7 +31,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "api": "node server/server.js",
-    "dev": "npx concurrently -k \"npm run api\" \"npm start\"",
+    "dev": "concurrently -k \"npm run api\" \"npm start\"",
     "seed": "node server/seed.js",
     "db:clear": "node server/clearBusinessData.js",
     "firebase:seed": "node scripts/seedFirebaseUsers.mjs"
@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4"
+    "@types/react-dom": "^19.2.4",
+    "concurrently": "^9.1.2"
   }
 }

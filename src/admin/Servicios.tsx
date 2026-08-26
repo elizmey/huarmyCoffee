@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, FolderPlus } from 'lucide-react';
-import { apiUrl } from '../api';
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
-});
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const ServiciosAdmin = () => {
   const [servicios, setServicios] = useState([]);
@@ -39,8 +35,8 @@ const ServiciosAdmin = () => {
     setLoading(true);
     try {
       const [resS, resC] = await Promise.all([
-        fetch(apiUrl('/servicios'), { headers: getHeaders() }).then(r => r.json()),
-        fetch(apiUrl('/categorias'), { headers: getHeaders() }).then(r => r.json())
+        adminFetchList('/servicios'),
+        adminFetchList('/categorias'),
       ]);
       setServicios(Array.isArray(resS) ? resS : []);
       setCategorias(Array.isArray(resC) ? resC : []);
@@ -89,15 +85,13 @@ const ServiciosAdmin = () => {
 
     try {
       if (editingService) {
-        await fetch(apiUrl(`/servicios/${editingService.id}`), {
+        await adminFetch(`/servicios/${editingService.id}`, {
           method: 'PATCH',
-          headers: getHeaders(),
           body: JSON.stringify(data)
         });
       } else {
-        await fetch(apiUrl('/servicios'), {
+        await adminFetch('/servicios', {
           method: 'POST',
-          headers: getHeaders(),
           body: JSON.stringify(data)
         });
       }
@@ -111,7 +105,7 @@ const ServiciosAdmin = () => {
   const handleServiceDelete = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este servicio?')) {
       try {
-        await fetch(apiUrl(`/servicios/${id}`), { method: 'DELETE', headers: getHeaders() });
+        await adminFetch(`/servicios/${id}`, { method: 'DELETE' });
         fetchData();
       } catch (e) {
         console.error(e);
@@ -123,9 +117,8 @@ const ServiciosAdmin = () => {
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch(apiUrl('/categorias'), {
+      await adminFetch('/categorias', {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify(categoryForm)
       });
       setCategoryForm({ nombre: '', descripcion: '' });
@@ -139,7 +132,7 @@ const ServiciosAdmin = () => {
   const handleCategoryDelete = async (id) => {
     if (window.confirm('¿Eliminar esta categoría? Esto podría afectar a los servicios asociados.')) {
       try {
-        await fetch(apiUrl(`/categorias/${id}`), { method: 'DELETE', headers: getHeaders() });
+        await adminFetch(`/categorias/${id}`, { method: 'DELETE' });
         fetchData();
       } catch (e) {
         console.error(e);

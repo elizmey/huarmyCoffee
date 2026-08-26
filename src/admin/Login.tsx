@@ -103,7 +103,10 @@ const Login = () => {
         </form>
 
         <div className="login-hint">
-          <p>Acceso con cuenta Firebase registrada en el sistema.</p>
+          <p>
+            <a href="/admin/forgot-password">¿Olvidaste tu contraseña?</a>
+          </p>
+          <p>Acceso interno de Huarmy Coffee.</p>
           <ul>
             <li><strong>Admin:</strong> admin@huarmycoffee.com</li>
             <li><strong>Recepcionista:</strong> recepcionista@huarmycoffee.com</li>

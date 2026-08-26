@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Truck, Store, UserCircle, Package, Building2, LogOut, Coffee, CalendarRange, Image, Menu, X, ShieldCheck, Handshake, MessageSquare, BarChart3, Settings, Tag, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, Store, UserCircle, Package, Building2, LogOut, Coffee, CalendarRange, Image, Menu, X, ShieldCheck, Handshake, MessageSquare, BarChart3, Settings, Tag, FileText, Target } from 'lucide-react';
 import { logoutAdmin } from '../services/authService';
 import './admin.css';
 
@@ -23,6 +23,7 @@ const navItems = [
   { to: '/admin/postulaciones', icon: FileText, label: 'Postulaciones' },
   { to: '/admin/promociones', icon: Tag, label: 'Promociones' },
   { to: '/admin/configuracion', icon: Settings, label: 'Configuración' },
+  { to: '/admin/mision-vision', icon: Target, label: 'Misión / Visión' },
   { to: '/admin/usuarios', icon: ShieldCheck, label: 'Usuarios' },
 ];
 

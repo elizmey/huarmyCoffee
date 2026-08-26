@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, X, Briefcase, Inbox } from 'lucide-react';
 
-import { apiUrl } from '../api';
-
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
-});
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const Postulaciones = () => {
   const [items, setItems] = useState([]);
@@ -17,9 +12,7 @@ const Postulaciones = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/postulaciones'), { headers: getHeaders() });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList('/postulaciones'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -29,7 +22,7 @@ const Postulaciones = () => {
 
   const updateEstado = async (id, estado) => {
     try {
-      await fetch(apiUrl(`/postulaciones/${id}`), { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ estado }) });
+      await adminFetch(`/postulaciones/${id}`, { method: 'PATCH', body: JSON.stringify({ estado }) });
     } catch (e) {
       console.error(e);
     }
@@ -39,7 +32,7 @@ const Postulaciones = () => {
   const deleteItem = async (id) => {
     if (window.confirm('¿Eliminar esta postulación?')) {
       try {
-        await fetch(apiUrl(`/postulaciones/${id}`), { method: 'DELETE', headers: getHeaders() });
+        await adminFetch(`/postulaciones/${id}`, { method: 'DELETE' });
       } catch (e) {
         console.error(e);
       }

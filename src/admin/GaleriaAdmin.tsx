@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, X, GripVertical, Image as ImageIcon } from 'lucide-react';
-import { apiUrl } from '../api';
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
-});
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const GaleriaAdmin = () => {
   const [items, setItems] = useState([]);
@@ -25,9 +21,7 @@ const GaleriaAdmin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/galeria'), { headers: getHeaders() });
-      const json = await res.json();
-      setItems(Array.isArray(json) ? json : []);
+      setItems(await adminFetchList('/galeria'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -38,9 +32,8 @@ const GaleriaAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch(apiUrl('/galeria'), {
+      await adminFetch('/galeria', {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify({
           ...form,
           orden: parseInt(String(form.orden || 0), 10)
@@ -57,7 +50,7 @@ const GaleriaAdmin = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar esta imagen de la galería?')) {
       try {
-        await fetch(apiUrl(`/galeria/${id}`), { method: 'DELETE', headers: getHeaders() });
+        await adminFetch(`/galeria/${id}`, { method: 'DELETE' });
         fetchData();
       } catch (e) {
         console.error(e);
@@ -101,9 +94,8 @@ const GaleriaAdmin = () => {
       // Persist the updated orders to database
       await Promise.all(
         sortedItems.map((item, index) =>
-          fetch(apiUrl(`/galeria/${item.id}`), {
+          adminFetch(`/galeria/${item.id}`, {
             method: 'PATCH',
-            headers: getHeaders(),
             body: JSON.stringify({ orden: index + 1 })
           })
         )

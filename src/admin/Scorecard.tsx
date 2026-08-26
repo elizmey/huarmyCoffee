@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Target } from 'lucide-react';
 
-import { apiUrl } from '../api';
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const PERSPECTIVAS = ['financiera', 'cliente', 'procesos', 'aprendizaje'];
 
@@ -26,9 +26,7 @@ const Scorecard = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/indicadores'), { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList('/indicadores'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -54,9 +52,9 @@ const Scorecard = () => {
     const payload = { ...form, valor_actual: parseFloat(form.valor_actual) || 0, meta: parseFloat(form.meta) || 0 };
     try {
       if (editing) {
-        await fetch(apiUrl(`/indicadores/${editing.id}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(payload) });
+        await adminFetch(`/indicadores/${editing.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
       } else {
-        await fetch(apiUrl('/indicadores'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(payload) });
+        await adminFetch('/indicadores', { method: 'POST', body: JSON.stringify(payload) });
       }
     } catch (err) {
       console.error(err);
@@ -68,7 +66,7 @@ const Scorecard = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este indicador?')) {
       try {
-        await fetch(apiUrl(`/indicadores/${id}`), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
+        await adminFetch(`/indicadores/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.error(err);
       }

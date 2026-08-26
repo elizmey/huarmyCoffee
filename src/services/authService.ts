@@ -54,6 +54,37 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
   return user;
 }
 
+export async function requestPasswordReset(email: string): Promise<{ message: string; resetUrl?: string }> {
+  let res: Response;
+  try {
+    res = await fetch(apiUrl('/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  } catch {
+    throw new Error('No se puede conectar con el API. Ejecuta npm run api (puerto 3001).');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'No se pudo solicitar el restablecimiento');
+  return data;
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(apiUrl('/reset-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+  } catch {
+    throw new Error('No se puede conectar con el API. Ejecuta npm run api (puerto 3001).');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la contraseña');
+}
+
 export async function logoutAdmin(): Promise<void> {
   try {
     await signOut(auth);

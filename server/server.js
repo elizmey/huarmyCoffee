@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
@@ -19,9 +20,40 @@ app.use(cors());
 app.set('trust proxy', 1);
 app.use(express.json());
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.' },
+});
+const publicWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Espera unos minutos e inténtalo de nuevo.' },
+});
+
+const MISION_TEXT = 'Ofrecer una experiencia gastronómica auténtica que rescata los sabores tradicionales ecuatorianos, brindando a nuestros clientes calidad, calidez y un ambiente acogedor en cada una de nuestras sucursales.';
+const VISION_TEXT = 'Ser la cadena de cafeterías y restaurantes ecuatorianos más reconocida del país para 2030, expandiendo nuestra propuesta gastronómica con valores de identidad, sostenibilidad y excelencia en el servicio.';
 
 const initSQL = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf8');
-pool.query(initSQL).catch(err => console.error('Error executing database migrations:', err));
+pool.query(initSQL)
+  .then(async () => {
+    await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_mision_vision_tipo ON mision_vision (tipo)');
+    await pool.query(
+      `INSERT INTO mision_vision (tipo, contenido, activo)
+       SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
+      ['mision', MISION_TEXT]
+    );
+    await pool.query(
+      `INSERT INTO mision_vision (tipo, contenido, activo)
+       SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
+      ['vision', VISION_TEXT]
+    );
+  })
+  .catch(err => console.error('Error executing database migrations:', err));
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -37,6 +69,36 @@ function authenticateToken(req, res, next) {
 function authorizeAdmin(req, res, next) {
   if (req.user?.rol !== 'admin') return res.status(403).json({ error: 'Requiere permisos de administrador' });
   next();
+}
+
+const ALLOWED_COLUMNS = {
+  clientes: ['nombre', 'email', 'telefono', 'direccion'],
+  proveedores: ['nombre', 'contacto', 'telefono', 'email', 'direccion'],
+  sucursales: ['nombre', 'direccion', 'telefono', 'capacidad_maxima', 'whatsapp', 'activo'],
+  personal: ['nombre', 'cargo', 'telefono', 'email', 'salario', 'sucursal_id'],
+  inventarios: ['producto', 'cantidad', 'unidad', 'stock_minimo', 'sucursal_id', 'proveedor_id'],
+  categorias: ['nombre', 'descripcion', 'activo'],
+  servicios: ['categoria_id', 'nombre', 'descripcion', 'precio', 'duracion', 'activo'],
+  citas: ['cliente_id', 'sucursal_id', 'servicio_id', 'fecha_hora', 'estado'],
+  galeria: ['titulo', 'url_imagen', 'categoria', 'orden'],
+  socios: ['nombre', 'tipo', 'contacto', 'telefono', 'email', 'direccion'],
+  comunicaciones: ['asunto', 'mensaje', 'destinatario', 'fecha_publicacion', 'activo'],
+  indicadores: ['nombre', 'perspectiva', 'valor_actual', 'meta', 'unidad'],
+  postulaciones: ['nombre', 'correo', 'telefono', 'mensaje', 'estado', 'fecha'],
+  configuracion: ['clave', 'valor', 'descripcion'],
+  promociones: ['titulo', 'descripcion', 'tipo', 'precio', 'fecha_inicio', 'fecha_fin', 'url_imagen', 'activo'],
+  mision_vision: ['tipo', 'contenido', 'activo'],
+};
+
+function pickAllowed(tableName, body) {
+  const allowed = ALLOWED_COLUMNS[tableName] || [];
+  const out = {};
+  for (const key of allowed) {
+    if (Object.prototype.hasOwnProperty.call(body, key) && body[key] !== undefined) {
+      out[key] = body[key];
+    }
+  }
+  return out;
 }
 
 function crudHandler(tableName, fn) {
@@ -64,18 +126,20 @@ function crud(tableName, allowWrite = true) {
   }));
   if (allowWrite) {
     router.post('/', crudHandler(tableName, async (req, res) => {
-      const keys = Object.keys(req.body);
-      const values = Object.values(req.body);
-      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío' });
+      const data = pickAllowed(tableName, req.body);
+      const keys = Object.keys(data);
+      const values = Object.values(data);
+      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío o campos no permitidos' });
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
       const query = `INSERT INTO ${tableName} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
       const { rows } = await pool.query(query, values);
       res.status(201).json(rows[0]);
     }));
     router.patch('/:id', crudHandler(tableName, async (req, res) => {
-      const keys = Object.keys(req.body);
-      const values = Object.values(req.body);
-      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío' });
+      const data = pickAllowed(tableName, req.body);
+      const keys = Object.keys(data);
+      const values = Object.values(data);
+      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío o campos no permitidos' });
       const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
       const query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
       const { rows } = await pool.query(query, [...values, req.params.id]);
@@ -154,7 +218,7 @@ function usuariosRouter() {
 
 app.get('/api/health', (_, res) => res.json({ ok: true }));
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
@@ -205,8 +269,104 @@ app.use('/api/indicadores', crud('indicadores'));
 app.use('/api/postulaciones', crud('postulaciones'));
 app.use('/api/configuracion', crud('configuracion'));
 app.use('/api/promociones', crud('promociones'));
+app.use('/api/mision-vision', crud('mision_vision'));
 
-app.post('/api/postular', async (req, res) => {
+app.post('/api/forgot-password', loginLimiter, async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const generic = { ok: true, message: 'Si el correo existe, se generó un enlace de recuperación.' };
+    if (!email) return res.status(400).json({ error: 'Email requerido' });
+    const { rows } = await pool.query('SELECT id FROM usuarios WHERE email = $1 AND activo = true', [email]);
+    if (!rows.length) return res.json(generic);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    await pool.query('UPDATE password_resets SET used = true WHERE usuario_id = $1 AND used = false', [rows[0].id]);
+    await pool.query(
+      'INSERT INTO password_resets (usuario_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+      [rows[0].id, tokenHash, expiresAt]
+    );
+    const origin = req.get('origin') || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${origin}/admin/reset-password?token=${token}`;
+    console.log('Enlace de recuperación:', resetUrl);
+    return res.json({ ...generic, resetUrl });
+  } catch (e) {
+    console.error('Error en forgot-password:', e);
+    res.status(500).json({ error: 'No se pudo procesar la solicitud' });
+  }
+});
+
+app.post('/api/reset-password', loginLimiter, async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+    if (!token || !password) return res.status(400).json({ error: 'Token y nueva contraseña requeridos' });
+    if (String(password).length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+    const { rows } = await pool.query(
+      `SELECT * FROM password_resets
+       WHERE token_hash = $1 AND used = false AND expires_at > NOW()
+       ORDER BY id DESC LIMIT 1`,
+      [tokenHash]
+    );
+    const reset = rows[0];
+    if (!reset) return res.status(400).json({ error: 'El enlace no es válido o ya expiró' });
+    const hash = bcrypt.hashSync(password, 10);
+    await pool.query('UPDATE usuarios SET password = $1 WHERE id = $2', [hash, reset.usuario_id]);
+    await pool.query('UPDATE password_resets SET used = true WHERE id = $1', [reset.id]);
+    res.json({ ok: true, message: 'Contraseña actualizada. Ya puedes iniciar sesión.' });
+  } catch (e) {
+    console.error('Error en reset-password:', e);
+    res.status(500).json({ error: 'No se pudo actualizar la contraseña' });
+  }
+});
+
+app.post('/api/public/citas', publicWriteLimiter, async (req, res) => {
+  try {
+    const { nombre, email, telefono, sucursal_id, servicio_id, fecha_hora } = req.body || {};
+    if (!nombre || !email || !sucursal_id || !servicio_id || !fecha_hora) {
+      return res.status(400).json({ error: 'Nombre, email, sucursal, servicio y fecha son requeridos' });
+    }
+    const emailNorm = String(email).trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm)) {
+      return res.status(400).json({ error: 'Email no válido' });
+    }
+    const when = new Date(fecha_hora);
+    if (Number.isNaN(when.getTime())) return res.status(400).json({ error: 'Fecha inválida' });
+
+    const suc = await pool.query('SELECT id FROM sucursales WHERE id = $1 AND activo = true', [sucursal_id]);
+    if (!suc.rows.length) return res.status(400).json({ error: 'Sucursal no válida' });
+    const serv = await pool.query('SELECT id FROM servicios WHERE id = $1 AND activo = true', [servicio_id]);
+    if (!serv.rows.length) return res.status(400).json({ error: 'Servicio no válido' });
+
+    let clienteId;
+    const existing = await pool.query('SELECT id FROM clientes WHERE LOWER(email) = $1 LIMIT 1', [emailNorm]);
+    if (existing.rows.length) {
+      clienteId = existing.rows[0].id;
+      await pool.query(
+        'UPDATE clientes SET nombre = $1, telefono = COALESCE($2, telefono) WHERE id = $3',
+        [String(nombre).trim(), telefono || null, clienteId]
+      );
+    } else {
+      const created = await pool.query(
+        'INSERT INTO clientes (nombre, email, telefono) VALUES ($1, $2, $3) RETURNING id',
+        [String(nombre).trim(), emailNorm, telefono || null]
+      );
+      clienteId = created.rows[0].id;
+    }
+    const { rows } = await pool.query(
+      `INSERT INTO citas (cliente_id, sucursal_id, servicio_id, fecha_hora, estado)
+       VALUES ($1, $2, $3, $4, 'pendiente') RETURNING *`,
+      [clienteId, sucursal_id, servicio_id, when]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) {
+    console.error('Error al reservar cita:', e);
+    res.status(500).json({ error: 'No se pudo registrar la reserva' });
+  }
+});
+
+app.post('/api/postular', publicWriteLimiter, async (req, res) => {
   const { nombre, correo, telefono, mensaje } = req.body;
   if (!nombre || !correo || !mensaje) {
     return res.status(400).json({ error: 'Nombre, correo y mensaje son requeridos' });
@@ -236,24 +396,39 @@ app.get('/api/public/promociones', async (_, res) => {
 });
 
 app.get('/api/public/servicios', async (_, res) => {
-  const { rows } = await pool.query(`
-    SELECT s.*, c.nombre AS categoria_nombre
-    FROM servicios s
-    LEFT JOIN categorias c ON s.categoria_id = c.id
-    WHERE s.activo = true
-    ORDER BY c.nombre, s.nombre
-  `);
-  res.json(rows);
+  try {
+    const { rows } = await pool.query(`
+      SELECT s.*, c.nombre AS categoria_nombre
+      FROM servicios s
+      LEFT JOIN categorias c ON s.categoria_id = c.id
+      WHERE s.activo = true
+      ORDER BY c.nombre, s.nombre
+    `);
+    res.json(rows);
+  } catch (e) {
+    console.error('Error al cargar servicios públicos:', e);
+    res.json([]);
+  }
 });
 
 app.get('/api/public/sucursales', async (_, res) => {
-  const { rows } = await pool.query('SELECT * FROM sucursales WHERE activo = true ORDER BY nombre');
-  res.json(rows);
+  try {
+    const { rows } = await pool.query('SELECT * FROM sucursales WHERE activo = true ORDER BY nombre');
+    res.json(rows);
+  } catch (e) {
+    console.error('Error al cargar sucursales públicas:', e);
+    res.json([]);
+  }
 });
 
 app.get('/api/public/galeria', async (_, res) => {
-  const { rows } = await pool.query('SELECT * FROM galeria ORDER BY orden ASC, id ASC');
-  res.json(rows);
+  try {
+    const { rows } = await pool.query('SELECT * FROM galeria ORDER BY orden ASC, id ASC');
+    res.json(rows);
+  } catch (e) {
+    console.error('Error al cargar galería pública:', e);
+    res.json([]);
+  }
 });
 
 app.get('/api/public/configuracion', async (_, res) => {
@@ -286,10 +461,20 @@ app.get('/api/public/vision', async (_, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, '../build')));
-app.use((req, res) => {
-  if (!req.path.startsWith('/api')) res.sendFile(path.join(__dirname, '../build/index.html'));
-});
+const buildDir = path.join(__dirname, '../build');
+const buildIndex = path.join(buildDir, 'index.html');
+if (fs.existsSync(buildIndex)) {
+  app.use(express.static(buildDir));
+  app.use((req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Ruta no encontrada' });
+    res.sendFile(buildIndex);
+  });
+} else {
+  app.use((req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Ruta no encontrada' });
+    res.status(404).json({ error: 'Frontend no compilado. Usa npm start en el puerto 3000.' });
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`API corriendo en http://localhost:${PORT}`);

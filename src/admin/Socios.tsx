@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 
-import { apiUrl } from '../api';
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const emptyForm = { nombre: '', tipo: 'socio', contacto: '', telefono: '', email: '', direccion: '' };
 
@@ -17,9 +17,7 @@ const Socios = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/socios'), { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList('/socios'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -43,15 +41,14 @@ const Socios = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = { ...form, created_at: new Date().toISOString().split('T')[0] };
     try {
       if (editing) {
-        await fetch(apiUrl(`/socios/${editing.id}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(form) });
+        await adminFetch(`/socios/${editing.id}`, { method: 'PATCH', body: JSON.stringify(form) });
       } else {
-        await fetch(apiUrl('/socios'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(payload) });
+        await adminFetch('/socios', { method: 'POST', body: JSON.stringify(form) });
       }
     } catch (err) {
-      console.error(err);
+      alert((err as Error).message);
     }
     setShowModal(false);
     fetchItems();
@@ -60,7 +57,7 @@ const Socios = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este socio?')) {
       try {
-        await fetch(apiUrl(`/socios/${id}`), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
+        await adminFetch(`/socios/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.error(err);
       }

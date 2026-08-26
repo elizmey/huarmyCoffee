@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, BadgePercent } from 'lucide-react';
 
-import { apiUrl } from '../api';
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const emptyForm = { titulo: '', descripcion: '', tipo: 'Corporativa', precio: '', fecha_inicio: '', fecha_fin: '', url_imagen: '', activo: true };
 
@@ -17,9 +17,7 @@ const PromocionesAdmin = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/promociones'), { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList('/promociones'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -53,12 +51,12 @@ const PromocionesAdmin = () => {
     };
     try {
       if (editing) {
-        await fetch(apiUrl(`/promociones/${editing.id}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(payload) });
+        await adminFetch(`/promociones/${editing.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
       } else {
-        await fetch(apiUrl('/promociones'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(payload) });
+        await adminFetch('/promociones', { method: 'POST', body: JSON.stringify(payload) });
       }
     } catch (err) {
-      console.error(err);
+      alert((err as Error).message);
     }
     setShowModal(false);
     fetchItems();
@@ -67,7 +65,7 @@ const PromocionesAdmin = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar esta promoción?')) {
       try {
-        await fetch(apiUrl(`/promociones/${id}`), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
+        await adminFetch(`/promociones/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.error(err);
       }

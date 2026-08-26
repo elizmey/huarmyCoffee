@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Settings } from 'lucide-react';
 
-import { apiUrl } from '../api';
+import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const emptyForm = { clave: '', valor: '', descripcion: '' };
 
@@ -17,9 +17,7 @@ const Configuracion = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/configuracion'), { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList('/configuracion'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -38,12 +36,12 @@ const Configuracion = () => {
     e.preventDefault();
     try {
       if (editing) {
-        await fetch(apiUrl(`/configuracion/${editing.id}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(form) });
+        await adminFetch(`/configuracion/${editing.id}`, { method: 'PATCH', body: JSON.stringify(form) });
       } else {
-        await fetch(apiUrl('/configuracion'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }, body: JSON.stringify(form) });
+        await adminFetch('/configuracion', { method: 'POST', body: JSON.stringify(form) });
       }
     } catch (err) {
-      console.error(err);
+      alert((err as Error).message);
     }
     setShowModal(false);
     fetchItems();
@@ -52,7 +50,7 @@ const Configuracion = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar esta configuración?')) {
       try {
-        await fetch(apiUrl(`/configuracion/${id}`), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') } });
+        await adminFetch(`/configuracion/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.error(err);
       }
