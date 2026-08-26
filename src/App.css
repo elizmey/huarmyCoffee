@@ -1,0 +1,161 @@
+.App {
+  min-height: 100vh;
+}
+
+.mobile-menu-button {
+  display: none;
+}
+
+.mobile-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 11, 7, 0.54);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 1090;
+}
+
+.mobile-menu-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-menu-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(82vw, 320px);
+  height: 100vh;
+  padding: 18px 16px 22px;
+  background: linear-gradient(180deg, #2c1a0f 0%, #3e2c23 100%);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.24);
+  transform: translateX(100%);
+  transition: transform 0.32s ease;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mobile-menu-drawer.open {
+  transform: translateX(0);
+}
+
+.mobile-menu-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #f5e8d3;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mobile-menu-close {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(245, 232, 211, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5e8d3;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.mobile-menu-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-menu-link {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #f5e8d3;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(245, 232, 211, 0.12);
+  font-weight: 600;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.mobile-menu-link:hover {
+  transform: translateX(4px);
+  background: rgba(212, 163, 115, 0.18);
+}
+
+@media (max-width: 900px) {
+  .desktop-nav {
+    display: none !important;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex !important;
+  }
+}
+
+/* ——— Accesibilidad global (widget del ojo) ——— */
+/* El filtro se aplica al contenido y a cada elemento flotante/fijo por separado
+   (no al <body>) para no romper su posicionamiento fixed respecto al viewport. */
+body.grayscale-filter #site-content,
+body.grayscale-filter header,
+body.grayscale-filter .mobile-menu-backdrop,
+body.grayscale-filter .mobile-menu-drawer,
+body.grayscale-filter .accessibility-widget-root,
+body.grayscale-filter .whatsapp-float-container {
+  filter: grayscale(100%) !important;
+}
+
+body.legible-font,
+body.legible-font * {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+body.high-contrast,
+body.high-contrast * {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+body.high-contrast a,
+body.high-contrast button {
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+  outline: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .btn-primary,
+body.high-contrast .btn-secondary,
+body.high-contrast .btn-submit,
+body.high-contrast .menu-item span:last-child {
+  background: #ffff00 !important;
+  color: #000 !important;
+  border-color: #ffff00 !important;
+}
+
+body.high-contrast img,
+body.high-contrast video {
+  filter: contrast(1.15) !important;
+  border: 2px solid #ffff00 !important;
+}
+
+/* Panel del widget: legible en alto contraste */
+body.high-contrast .accessibility-widget-panel,
+body.high-contrast .accessibility-widget-panel * {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: #000 !important;
+}
+
+body.high-contrast .accessibility-widget-panel button {
+  color: #000 !important;
+  border-color: #000 !important;
+}
+
+.App.access-text-scaled {
+  zoom: var(--access-font-scale, 1);
+}

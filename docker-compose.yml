@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: huarmy-coffee-db
+    environment:
+      POSTGRES_DB: huarmy_db
+      POSTGRES_USER: huarmy_user
+      POSTGRES_PASSWORD: HuarmyPassword2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./server/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U huarmy_user -d huarmy_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
