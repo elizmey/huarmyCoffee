@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS indicadores (
   perspectiva VARCHAR(50) NOT NULL DEFAULT 'financiera',
   valor_actual DECIMAL(12,2) NOT NULL DEFAULT 0,
   meta DECIMAL(12,2) NOT NULL DEFAULT 0,
+  estandar DECIMAL(12,2) NOT NULL DEFAULT 0,
   unidad VARCHAR(20) DEFAULT '%',
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -196,6 +197,65 @@ CREATE TRIGGER trg_actualizar_updated_at
   BEFORE UPDATE ON categorias
   FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at();
 
+ALTER TABLE indicadores ADD COLUMN IF NOT EXISTS estandar DECIMAL(12,2) NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS auditoria (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  usuario_nombre VARCHAR(150),
+  rol VARCHAR(50),
+  accion VARCHAR(30) NOT NULL,
+  modulo VARCHAR(80) NOT NULL,
+  detalle TEXT,
+  ruta VARCHAR(200),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS proyecto_tareas (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(200) NOT NULL,
+  duracion_dias INTEGER NOT NULL DEFAULT 1,
+  fecha_inicio DATE,
+  predecesoras INTEGER[] DEFAULT '{}',
+  responsable VARCHAR(100),
+  modulo VARCHAR(80),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pedidos (
+  id SERIAL PRIMARY KEY,
+  cliente_nombre VARCHAR(150),
+  cliente_id INTEGER REFERENCES clientes(id) ON DELETE SET NULL,
+  total DECIMAL(10,2) NOT NULL DEFAULT 0,
+  metodo_pago VARCHAR(30),
+  estado VARCHAR(20) NOT NULL DEFAULT 'abierto',
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  sucursal_id INTEGER REFERENCES sucursales(id) ON DELETE SET NULL,
+  tipo VARCHAR(30) DEFAULT 'mostrador',
+  notas TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  cobrado_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pedido_detalles (
+  id SERIAL PRIMARY KEY,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE CASCADE,
+  servicio_id INTEGER REFERENCES servicios(id) ON DELETE SET NULL,
+  nombre VARCHAR(200) NOT NULL,
+  precio DECIMAL(10,2) NOT NULL DEFAULT 0,
+  cantidad INTEGER NOT NULL DEFAULT 1,
+  subtotal DECIMAL(10,2) NOT NULL DEFAULT 0
+);
+
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS sucursal_id INTEGER REFERENCES sucursales(id) ON DELETE SET NULL;
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo VARCHAR(30) DEFAULT 'mostrador';
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS notas TEXT;
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS cobrado_at TIMESTAMP;
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS cliente_nombre VARCHAR(150);
+
 CREATE INDEX IF NOT EXISTS idx_citas_fecha ON citas(fecha_hora);
 CREATE INDEX IF NOT EXISTS idx_citas_estado ON citas(estado);
 CREATE INDEX IF NOT EXISTS idx_clientes_correo ON clientes(email);
+CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON auditoria(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pedidos_estado ON pedidos(estado);
+CREATE INDEX IF NOT EXISTS idx_pedido_detalles_pedido ON pedido_detalles(pedido_id);

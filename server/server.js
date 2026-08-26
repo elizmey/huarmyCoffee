@@ -8,6 +8,10 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const pool = require('./db');
+const { MODULES, TABLE_ROLES, BRANCH_SCOPED, ROLE_LABELS } = require('./roles');
+const { computeCpm, normalizePreds } = require('./cpm');
+const { buildFunctionPoints } = require('./functionPoints');
+const { pedidosRouter } = require('./pedidos');
 require('dotenv').config();
 
 const app = express();
@@ -52,6 +56,7 @@ pool.query(initSQL)
        SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
       ['vision', VISION_TEXT]
     );
+    await seedProjectPlan();
   })
   .catch(err => console.error('Error executing database migrations:', err));
 
@@ -71,6 +76,60 @@ function authorizeAdmin(req, res, next) {
   next();
 }
 
+function authorizeRoles(...roles) {
+  return (req, res, next) => {
+    if (req.user?.rol === 'admin') return next();
+    if (roles.length && !roles.includes(req.user?.rol)) {
+      return res.status(403).json({ error: 'No tienes acceso a este módulo' });
+    }
+    next();
+  };
+}
+
+async function logAudit(req, accion, modulo, detalle) {
+  try {
+    await pool.query(
+      `INSERT INTO auditoria (usuario_id, usuario_nombre, rol, accion, modulo, detalle, ruta)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        req.user?.id || null,
+        req.user?.nombre || 'público',
+        req.user?.rol || 'publico',
+        accion,
+        modulo,
+        detalle ? String(detalle).slice(0, 500) : null,
+        req.originalUrl || null,
+      ]
+    );
+  } catch (e) {
+    console.error('auditoria:', e.message);
+  }
+}
+
+async function seedProjectPlan() {
+  const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM proyecto_tareas');
+  if (rows[0].c > 0) return;
+  const plan = [
+    ['Análisis de requisitos y roles', 5, [], 'Equipo', 'roles'],
+    ['Diseño de base de datos y módulos', 4, [0], 'Administrador', 'roles'],
+    ['Implementación del sitio público', 8, [1], 'Equipo', 'servicios'],
+    ['Implementación del back-office', 8, [1], 'Administrador', 'dashboard'],
+    ['Tablero BSC e indicadores', 3, [3], 'Gerencia', 'scorecard'],
+    ['Pruebas e integración', 4, [2, 3, 4], 'Equipo', 'planificacion'],
+    ['Despliegue y auditoría', 2, [5], 'Administrador', 'auditoria'],
+  ];
+  const ids = [];
+  for (const [nombre, duracion, predIdx, responsable, modulo] of plan) {
+    const preds = predIdx.map((i) => ids[i]);
+    const inserted = await pool.query(
+      `INSERT INTO proyecto_tareas (nombre, duracion_dias, predecesoras, responsable, modulo)
+       VALUES ($1, $2, $3::int[], $4, $5) RETURNING id`,
+      [nombre, duracion, preds, responsable, modulo]
+    );
+    ids.push(inserted.rows[0].id);
+  }
+}
+
 const ALLOWED_COLUMNS = {
   clientes: ['nombre', 'email', 'telefono', 'direccion'],
   proveedores: ['nombre', 'contacto', 'telefono', 'email', 'direccion'],
@@ -83,7 +142,7 @@ const ALLOWED_COLUMNS = {
   galeria: ['titulo', 'url_imagen', 'categoria', 'orden'],
   socios: ['nombre', 'tipo', 'contacto', 'telefono', 'email', 'direccion'],
   comunicaciones: ['asunto', 'mensaje', 'destinatario', 'fecha_publicacion', 'activo'],
-  indicadores: ['nombre', 'perspectiva', 'valor_actual', 'meta', 'unidad'],
+  indicadores: ['nombre', 'perspectiva', 'valor_actual', 'meta', 'estandar', 'unidad'],
   postulaciones: ['nombre', 'correo', 'telefono', 'mensaje', 'estado', 'fecha'],
   configuracion: ['clave', 'valor', 'descripcion'],
   promociones: ['titulo', 'descripcion', 'tipo', 'precio', 'fecha_inicio', 'fecha_fin', 'url_imagen', 'activo'],
@@ -112,11 +171,23 @@ function crudHandler(tableName, fn) {
   };
 }
 
-function crud(tableName, allowWrite = true) {
+function crud(tableName, allowWrite = true, roles = TABLE_ROLES[tableName] || ['admin']) {
   const router = express.Router();
   router.use(authenticateToken);
-  router.get('/', crudHandler(tableName, async (_, res) => {
-    const { rows } = await pool.query(`SELECT * FROM ${tableName} ORDER BY id ASC`);
+  router.use(authorizeRoles(...roles));
+  router.get('/', crudHandler(tableName, async (req, res) => {
+    let sql = `SELECT * FROM ${tableName} ORDER BY id ASC`;
+    const params = [];
+    if (
+      BRANCH_SCOPED.includes(tableName) &&
+      req.user.rol !== 'admin' &&
+      req.user.rol !== 'gerente' &&
+      req.user.sucursal_id
+    ) {
+      sql = `SELECT * FROM ${tableName} WHERE sucursal_id = $1 ORDER BY id ASC`;
+      params.push(req.user.sucursal_id);
+    }
+    const { rows } = await pool.query(sql, params);
     res.json(rows);
   }));
   router.get('/:id', crudHandler(tableName, async (req, res) => {
@@ -133,6 +204,7 @@ function crud(tableName, allowWrite = true) {
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
       const query = `INSERT INTO ${tableName} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
       const { rows } = await pool.query(query, values);
+      await logAudit(req, 'crear', tableName, `id=${rows[0].id}`);
       res.status(201).json(rows[0]);
     }));
     router.patch('/:id', crudHandler(tableName, async (req, res) => {
@@ -144,11 +216,13 @@ function crud(tableName, allowWrite = true) {
       const query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
       const { rows } = await pool.query(query, [...values, req.params.id]);
       if (!rows.length) return res.status(404).json({ error: 'Registro no encontrado' });
+      await logAudit(req, 'editar', tableName, `id=${req.params.id}`);
       res.json(rows[0]);
     }));
     router.delete('/:id', crudHandler(tableName, async (req, res) => {
       const { rowCount } = await pool.query(`DELETE FROM ${tableName} WHERE id = $1`, [req.params.id]);
       if (!rowCount) return res.status(404).json({ error: 'Registro no encontrado' });
+      await logAudit(req, 'eliminar', tableName, `id=${req.params.id}`);
       res.json({ deleted: true });
     }));
   }
@@ -159,7 +233,7 @@ function usuariosRouter() {
   const router = express.Router();
   router.use(authenticateToken);
 
-  router.get('/', crudHandler('usuarios', async (_, res) => {
+  router.get('/', authorizeRoles('admin', 'gerente'), crudHandler('usuarios', async (_, res) => {
     const { rows } = await pool.query(
       'SELECT id, nombre, email, rol, sucursal_id, activo, created_at FROM usuarios ORDER BY id ASC'
     );
@@ -177,6 +251,7 @@ function usuariosRouter() {
        RETURNING id, nombre, email, rol, sucursal_id, activo, created_at`,
       [nombre, email.trim(), hash, rol || 'cajero', sucursal_id || null, activo !== false]
     );
+    await logAudit(req, 'crear', 'usuarios', `id=${rows[0].id} email=${rows[0].email}`);
     res.status(201).json(rows[0]);
   }));
 
@@ -201,6 +276,7 @@ function usuariosRouter() {
       [...Object.values(updates), req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Usuario no encontrado' });
+    await logAudit(req, 'editar', 'usuarios', `id=${req.params.id}`);
     res.json(rows[0]);
   }));
 
@@ -210,6 +286,7 @@ function usuariosRouter() {
     }
     const { rowCount } = await pool.query('DELETE FROM usuarios WHERE id = $1', [req.params.id]);
     if (!rowCount) return res.status(404).json({ error: 'Usuario no encontrado' });
+    await logAudit(req, 'eliminar', 'usuarios', `id=${req.params.id}`);
     res.json({ deleted: true });
   }));
 
@@ -231,6 +308,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
       { expiresIn: JWT_EXPIRES }
     );
     res.json({ token, user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, sucursal_id: user.sucursal_id } });
+    await logAudit({ user: { id: user.id, nombre: user.nombre, rol: user.rol }, originalUrl: '/api/login' }, 'login', 'portal', user.email);
   } catch (e) {
     console.error('Error en login:', e);
     res.status(500).json({ error: 'Error al iniciar sesión' });
@@ -239,14 +317,17 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 
 app.get('/api/dashboard', authenticateToken, async (_, res) => {
   try {
-    const tables = ['clientes', 'proveedores', 'socios', 'sucursales', 'personal', 'inventarios', 'comunicaciones'];
+    const tables = ['clientes', 'proveedores', 'socios', 'sucursales', 'usuarios', 'inventarios', 'comunicaciones', 'citas', 'pedidos'];
     const counts = {};
     for (const table of tables) {
       const { rows } = await pool.query(`SELECT COUNT(*)::int AS c FROM ${table}`);
       counts[table] = rows[0].c;
     }
     const { rows: indicadores } = await pool.query('SELECT * FROM indicadores ORDER BY id ASC');
-    res.json({ counts, indicadores });
+    const { rows: stock } = await pool.query(
+      'SELECT COUNT(*)::int AS c FROM inventarios WHERE cantidad <= 3'
+    );
+    res.json({ counts, indicadores, stock_bajo: stock[0].c });
   } catch (e) {
     console.error('Error en dashboard:', e);
     res.status(500).json({ error: 'Error al cargar el dashboard' });
@@ -262,6 +343,7 @@ app.use('/api/inventarios', crud('inventarios'));
 app.use('/api/categorias', crud('categorias'));
 app.use('/api/servicios', crud('servicios'));
 app.use('/api/citas', crud('citas'));
+app.use('/api/pedidos', pedidosRouter(pool, { authenticateToken, authorizeRoles, logAudit }));
 app.use('/api/galeria', crud('galeria'));
 app.use('/api/socios', crud('socios'));
 app.use('/api/comunicaciones', crud('comunicaciones'));
@@ -270,6 +352,120 @@ app.use('/api/postulaciones', crud('postulaciones'));
 app.use('/api/configuracion', crud('configuracion'));
 app.use('/api/promociones', crud('promociones'));
 app.use('/api/mision-vision', crud('mision_vision'));
+
+app.get('/api/modulos', authenticateToken, (req, res) => {
+  const rol = req.user.rol;
+  res.json({
+    rol,
+    rol_label: ROLE_LABELS[rol] || rol,
+    visibles: MODULES.filter((m) => m.roles.includes(rol) || rol === 'admin'),
+    matriz: MODULES,
+    roles: ROLE_LABELS,
+  });
+});
+
+app.get('/api/puntos-funcion', authenticateToken, authorizeRoles('admin', 'gerente'), (_, res) => {
+  res.json(buildFunctionPoints());
+});
+
+app.get('/api/auditoria', authenticateToken, authorizeAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT a.*, u.email
+       FROM auditoria a
+       LEFT JOIN usuarios u ON u.id = a.usuario_id
+       ORDER BY a.created_at DESC
+       LIMIT 400`
+    );
+    const resumen = {};
+    for (const row of rows) {
+      const key = row.usuario_nombre || 'público';
+      if (!resumen[key]) resumen[key] = { usuario: key, rol: row.rol, total: 0, por_accion: {} };
+      resumen[key].total += 1;
+      resumen[key].por_accion[row.accion] = (resumen[key].por_accion[row.accion] || 0) + 1;
+    }
+    res.json({ eventos: rows, resumen: Object.values(resumen) });
+  } catch (e) {
+    console.error('auditoria list:', e);
+    res.status(500).json({ error: 'No se pudo cargar la bitácora' });
+  }
+});
+
+app.get('/api/proyecto-tareas', authenticateToken, authorizeRoles('admin', 'gerente'), async (_, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM proyecto_tareas ORDER BY id ASC');
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudieron cargar las tareas' });
+  }
+});
+
+app.get('/api/planificacion', authenticateToken, authorizeRoles('admin', 'gerente'), async (_, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM proyecto_tareas ORDER BY id ASC');
+    res.json(computeCpm(rows));
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo calcular la red crítica' });
+  }
+});
+
+app.post('/api/proyecto-tareas', authenticateToken, authorizeRoles('admin', 'gerente'), async (req, res) => {
+  try {
+    const { nombre, duracion_dias, fecha_inicio, predecesoras, responsable, modulo } = req.body || {};
+    if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+    const preds = normalizePreds(predecesoras);
+    const { rows } = await pool.query(
+      `INSERT INTO proyecto_tareas (nombre, duracion_dias, fecha_inicio, predecesoras, responsable, modulo)
+       VALUES ($1, $2, $3, $4::int[], $5, $6) RETURNING *`,
+      [nombre, parseInt(duracion_dias, 10) || 1, fecha_inicio || null, preds, responsable || null, modulo || null]
+    );
+    await logAudit(req, 'crear', 'proyecto_tareas', `id=${rows[0].id}`);
+    res.status(201).json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo crear la tarea' });
+  }
+});
+
+app.patch('/api/proyecto-tareas/:id', authenticateToken, authorizeRoles('admin', 'gerente'), async (req, res) => {
+  try {
+    const { nombre, duracion_dias, fecha_inicio, predecesoras, responsable, modulo } = req.body || {};
+    const { rows } = await pool.query(
+      `UPDATE proyecto_tareas SET
+         nombre = COALESCE($1, nombre),
+         duracion_dias = COALESCE($2, duracion_dias),
+         fecha_inicio = COALESCE($3, fecha_inicio),
+         predecesoras = COALESCE($4::int[], predecesoras),
+         responsable = COALESCE($5, responsable),
+         modulo = COALESCE($6, modulo)
+       WHERE id = $7 RETURNING *`,
+      [
+        nombre || null,
+        duracion_dias !== undefined ? parseInt(duracion_dias, 10) : null,
+        fecha_inicio || null,
+        predecesoras !== undefined ? normalizePreds(predecesoras) : null,
+        responsable || null,
+        modulo || null,
+        req.params.id,
+      ]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Tarea no encontrada' });
+    await logAudit(req, 'editar', 'proyecto_tareas', `id=${req.params.id}`);
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo actualizar la tarea' });
+  }
+});
+
+app.delete('/api/proyecto-tareas/:id', authenticateToken, authorizeRoles('admin', 'gerente'), async (req, res) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM proyecto_tareas WHERE id = $1', [req.params.id]);
+    if (!rowCount) return res.status(404).json({ error: 'Tarea no encontrada' });
+    await logAudit(req, 'eliminar', 'proyecto_tareas', `id=${req.params.id}`);
+    res.json({ deleted: true });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo eliminar la tarea' });
+  }
+});
 
 app.post('/api/forgot-password', loginLimiter, async (req, res) => {
   try {
@@ -358,6 +554,12 @@ app.post('/api/public/citas', publicWriteLimiter, async (req, res) => {
       `INSERT INTO citas (cliente_id, sucursal_id, servicio_id, fecha_hora, estado)
        VALUES ($1, $2, $3, $4, 'pendiente') RETURNING *`,
       [clienteId, sucursal_id, servicio_id, when]
+    );
+    await logAudit(
+      { user: { id: null, nombre: String(nombre).trim(), rol: 'publico' }, originalUrl: '/api/public/citas' },
+      'crear',
+      'citas',
+      `reserva pública ${emailNorm}`
     );
     res.status(201).json(rows[0]);
   } catch (e) {

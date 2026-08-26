@@ -9,7 +9,6 @@ import { testimonials } from './i18n/testimonials';
 import { gallery } from './i18n/gallery';
 import { ubicacion } from './i18n/ubicacion';
 import { contact } from './i18n/contact';
-import { trabaja } from './i18n/trabaja';
 import { promociones } from './i18n/promociones';
 import { portal } from './i18n/portal';
 
@@ -24,7 +23,7 @@ export const languages: { code: LangCode; name: string }[] = [
   { code: 'pt', name: 'Português' },
 ];
 
-const groups = [nav, access, home, menu, nosotros, servicios, testimonials, gallery, ubicacion, contact, trabaja, promociones, portal];
+const groups = [nav, access, home, menu, nosotros, servicios, testimonials, gallery, ubicacion, contact, promociones, portal];
 
 const translations: Record<string, Record<string, string>> = {
   es: {},

@@ -12,7 +12,7 @@ const PERSPECTIVA_LABELS = {
   aprendizaje: 'Aprendizaje',
 };
 
-const emptyForm = { nombre: '', perspectiva: 'financiera', valor_actual: '', meta: '', unidad: '%' };
+const emptyForm = { nombre: '', perspectiva: 'financiera', valor_actual: '', meta: '', estandar: '', unidad: '%' };
 
 const Scorecard = () => {
   const [items, setItems] = useState([]);
@@ -42,6 +42,7 @@ const Scorecard = () => {
       perspectiva: item.perspectiva || 'financiera',
       valor_actual: item.valor_actual,
       meta: item.meta,
+      estandar: item.estandar ?? '',
       unidad: item.unidad || '%',
     });
     setShowModal(true);
@@ -49,7 +50,12 @@ const Scorecard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = { ...form, valor_actual: parseFloat(form.valor_actual) || 0, meta: parseFloat(form.meta) || 0 };
+    const payload = {
+      ...form,
+      valor_actual: parseFloat(form.valor_actual) || 0,
+      meta: parseFloat(form.meta) || 0,
+      estandar: parseFloat(form.estandar) || 0,
+    };
     try {
       if (editing) {
         await adminFetch(`/indicadores/${editing.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
@@ -57,7 +63,7 @@ const Scorecard = () => {
         await adminFetch('/indicadores', { method: 'POST', body: JSON.stringify(payload) });
       }
     } catch (err) {
-      console.error(err);
+      alert((err as Error).message);
     }
     setShowModal(false);
     fetchItems();
@@ -77,11 +83,13 @@ const Scorecard = () => {
   const getCumplimiento = (item) => {
     const meta = parseFloat(item.meta);
     const actual = parseFloat(item.valor_actual);
-    if (!meta) return { value: '—', cls: '' };
+    const estandar = parseFloat(item.estandar);
+    if (!meta) return { value: '—', cls: '', estandarOk: null };
     const pct = Math.round((actual / meta) * 100);
     return {
       value: `${pct}%`,
       cls: pct >= 80 ? 'badge-success' : pct >= 50 ? 'badge-warning' : 'badge-danger',
+      estandarOk: estandar ? actual >= estandar : null,
     };
   };
 
@@ -90,9 +98,13 @@ const Scorecard = () => {
   return (
     <div>
       <div className="admin-header-bar">
-        <h1>Balanced Scorecard</h1>
+        <h1>Tablero de comando · BSC</h1>
         <button className="btn btn-primary" onClick={openCreate}><Plus size={16} /> Nuevo Indicador</button>
       </div>
+      <p style={{ color: '#8a7a6a', marginTop: 0 }}>
+        Balanced Scorecard con las cuatro perspectivas. La de <strong>Procesos</strong> cubre el flujo operativo: reserva → cliente → cita → inventario → capacidad.
+        El <em>estándar</em> es el mínimo aceptable; la <em>meta</em> es el objetivo gerencial. Cumplimiento ≥ 80% se considera en estándar de tablero.
+      </p>
 
       {PERSPECTIVAS.map(perspectiva => {
         const group = sortedItems.filter(i => (i.perspectiva || 'financiera') === perspectiva);
@@ -107,7 +119,7 @@ const Scorecard = () => {
               <p style={{ color: '#ccc', textAlign: 'center', padding: 20 }}>Sin indicadores para esta perspectiva.</p>
             ) : (
               <table className="admin-table">
-                <thead><tr><th>ID</th><th>Indicador</th><th>Valor Actual</th><th>Meta</th><th>Unidad</th><th>Cumplimiento</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>ID</th><th>Indicador</th><th>Valor</th><th>Estándar</th><th>Meta</th><th>Unidad</th><th>Cumplimiento</th><th>Acciones</th></tr></thead>
                 <tbody>{group.map(item => {
                   const cumplimiento = getCumplimiento(item);
                   return (
@@ -115,9 +127,14 @@ const Scorecard = () => {
                       <td>{item.id}</td>
                       <td><strong>{item.nombre}</strong></td>
                       <td>{item.valor_actual}</td>
+                      <td>{item.estandar || '—'}</td>
                       <td>{item.meta}</td>
                       <td>{item.unidad}</td>
-                      <td><span className={`badge ${cumplimiento.cls}`}>{cumplimiento.value}</span></td>
+                      <td>
+                        <span className={`badge ${cumplimiento.cls}`}>{cumplimiento.value}</span>
+                        {cumplimiento.estandarOk === true && <span className="badge badge-success" style={{ marginLeft: 6 }}>Estándar OK</span>}
+                        {cumplimiento.estandarOk === false && <span className="badge badge-danger" style={{ marginLeft: 6 }}>Bajo estándar</span>}
+                      </td>
                       <td>
                         <button className="btn btn-edit btn-sm" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
                         <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)} style={{ marginLeft: 6 }}><Trash2 size={14} /></button>
@@ -147,6 +164,7 @@ const Scorecard = () => {
               </div>
               <div className="form-row">
                 <div className="form-group"><label>Valor Actual</label><input className="form-control" type="number" step="0.01" value={form.valor_actual} onChange={e => setForm({ ...form, valor_actual: e.target.value })} required /></div>
+                <div className="form-group"><label>Estándar (mínimo)</label><input className="form-control" type="number" step="0.01" value={form.estandar} onChange={e => setForm({ ...form, estandar: e.target.value })} /></div>
                 <div className="form-group"><label>Meta</label><input className="form-control" type="number" step="0.01" value={form.meta} onChange={e => setForm({ ...form, meta: e.target.value })} required /></div>
               </div>
               <div className="form-group"><label>Unidad</label>

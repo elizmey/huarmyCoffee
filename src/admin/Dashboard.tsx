@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Truck, Store, UserCircle, Package, MessageSquare, Handshake, Target, TrendingUp, BarChart3 } from 'lucide-react';
+import { Users, Truck, Store, Package, MessageSquare, Handshake, Target, TrendingUp, BarChart3, CalendarRange, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { adminFetch, ApiError } from '../api/adminApi';
@@ -7,11 +7,12 @@ import { adminFetch, ApiError } from '../api/adminApi';
 type DashboardData = {
   counts: Record<string, number>;
   indicadores: Array<{ nombre: string; perspectiva: string; valor_actual: number; meta: number }>;
+  stock_bajo?: number;
 };
 
 const Dashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [user, setUser] = useState<{ nombre?: string } | null>(null);
+  const [user, setUser] = useState<{ nombre?: string; rol?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -60,19 +61,22 @@ const Dashboard = () => {
   }
   if (!data?.counts) return <div style={{ textAlign: 'center', padding: 60, color: '#e74c3c' }}>Error al cargar datos</div>;
 
-  const { counts, indicadores } = data;
+  const { counts, indicadores, stock_bajo } = data;
 
   const statCards = [
-    { icon: Users, label: 'Clientes', value: counts.clientes, color: '#d4a373', bg: '#fdf4e6' },
-    { icon: Truck, label: 'Proveedores', value: counts.proveedores, color: '#27ae60', bg: '#e8f8f0' },
-    { icon: Handshake, label: 'Socios', value: counts.socios, color: '#2980b9', bg: '#e8f0fe' },
-    { icon: Store, label: 'Sucursales', value: counts.sucursales, color: '#8e44ad', bg: '#f0e8f8' },
-    { icon: UserCircle, label: 'Personal', value: counts.personal, color: '#2c1a0f', bg: '#f4f0eb' },
-    { icon: Package, label: 'Inventario', value: counts.inventarios, color: '#e67e22', bg: '#fef5e7' },
-    { icon: MessageSquare, label: 'Comunicaciones', value: counts.comunicaciones, color: '#16a085', bg: '#e8f8f5' },
+    { icon: Users, label: 'Clientes', value: counts.clientes, color: '#d4a373', bg: '#fdf4e6', to: '/admin/clientes' },
+    { icon: CalendarRange, label: 'Citas', value: counts.citas || 0, color: '#2980b9', bg: '#e8f0fe', to: '/admin/citas' },
+    { icon: ShoppingBag, label: 'Pedidos', value: counts.pedidos || 0, color: '#16a085', bg: '#e8f8f5', to: '/admin/pedidos' },
+    { icon: Truck, label: 'Proveedores', value: counts.proveedores, color: '#27ae60', bg: '#e8f8f0', to: '/admin/proveedores' },
+    { icon: Handshake, label: 'Socios', value: counts.socios, color: '#2980b9', bg: '#e8f0fe', to: '/admin/socios' },
+    { icon: Store, label: 'Sucursales', value: counts.sucursales, color: '#8e44ad', bg: '#f0e8f8', to: '/admin/sucursales' },
+    { icon: ShieldCheck, label: 'Usuarios', value: counts.usuarios || 0, color: '#2c1a0f', bg: '#f4f0eb', to: '/admin/usuarios' },
+    { icon: Package, label: 'Inventario', value: counts.inventarios, color: '#e67e22', bg: '#fef5e7', to: '/admin/inventarios' },
+    { icon: MessageSquare, label: 'Comunicaciones', value: counts.comunicaciones, color: '#16a085', bg: '#e8f8f5', to: '/admin/comunicacion' },
   ];
 
   const chartData = indicadores?.map(i => ({ name: i.nombre.substring(0, 15), actual: i.valor_actual, meta: i.meta })) || [];
+  const visibleCards = statCards.filter((card) => card.to !== '/admin/usuarios' || user?.rol === 'admin');
 
   return (
     <div>
@@ -80,13 +84,18 @@ const Dashboard = () => {
         <h1>Panel de Gestión</h1>
         <div className="admin-user-info" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {user && <span>Bienvenido, {user.nombre}</span>}
-          <button className="btn btn-primary" onClick={() => navigate('/admin/scorecard')}><BarChart3 size={16} /> Ver Tablero Completo</button>
+          <button className="btn btn-primary" onClick={() => navigate('/admin/scorecard')}><BarChart3 size={16} /> Tablero de comando</button>
         </div>
       </div>
+      {typeof stock_bajo === 'number' && (
+        <p style={{ color: stock_bajo > 0 ? '#c0392b' : '#27ae60', marginTop: 0 }}>
+          Alertas de inventario (cantidad 3 o menos): <strong>{stock_bajo}</strong>
+        </p>
+      )}
 
       <div className="dashboard-grid">
-        {statCards.map((card, i) => (
-          <div key={i} className="dashboard-stat" style={{ cursor: 'pointer' }} onClick={() => { const r = card.label.toLowerCase(); if (['clientes','proveedores','socios','sucursales'].includes(r)) navigate(`/admin/${r}`); }}>
+        {visibleCards.map((card, i) => (
+          <div key={i} className="dashboard-stat" style={{ cursor: 'pointer' }} onClick={() => card.to && navigate(card.to)}>
             <div className="dashboard-stat-icon" style={{ background: card.bg, color: card.color }}><card.icon size={24} /></div>
             <div className="dashboard-stat-info"><h3>{card.value}</h3><p>{card.label}</p></div>
           </div>
@@ -113,15 +122,15 @@ const Dashboard = () => {
 
       <div className="admin-card">
         <div className="admin-card-header">
-          <h2><Target size={18} style={{ marginRight: 8, color: '#d4a373' }} />Resumen del Balanced Scorecard</h2>
+          <h2><Target size={18} style={{ marginRight: 8, color: '#d4a373' }} />Tablero de comando · procesos BSC</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
           {['financiera', 'cliente', 'procesos', 'aprendizaje'].map(p => {
             const items = indicadores?.filter(i => i.perspectiva === p) || [];
-            const avg = items.length ? (items.reduce((s, i) => s + (i.valor_actual / i.meta), 0) / items.length * 100).toFixed(1) : 0;
-            const labels = { financiera: '💰 Financiera', cliente: '👥 Cliente', procesos: '⚙️ Procesos', aprendizaje: '📚 Aprendizaje' };
+            const avg = items.length ? (items.reduce((s, i) => s + (i.valor_actual / (i.meta || 1)), 0) / items.length * 100).toFixed(1) : 0;
+            const labels = { financiera: 'Financiera', cliente: 'Cliente', procesos: 'Procesos', aprendizaje: 'Aprendizaje' };
             return (
-              <div key={p} style={{ background: '#fdfaf7', padding: 16, borderRadius: 8, border: '1px solid #e8e0d8' }}>
+              <div key={p} style={{ background: '#fdfaf7', padding: 16, borderRadius: 8, border: p === 'procesos' ? '2px solid #d4a373' : '1px solid #e8e0d8' }}>
                 <p style={{ margin: '0 0 4px', color: '#2c1a0f', fontWeight: 600, fontSize: 13 }}>{labels[p]}</p>
                 <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: Number(avg) >= 80 ? '#27ae60' : Number(avg) >= 50 ? '#f39c12' : '#e74c3c' }}>{avg}%</p>
                 <p style={{ margin: '2px 0 0', fontSize: 11, color: '#8a7a6a' }}>{items.length} indicadores</p>

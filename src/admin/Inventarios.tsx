@@ -76,7 +76,7 @@ const Inventarios = () => {
             <thead><tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Unidad</th><th>Stock Mín.</th><th>Sucursal</th><th>Proveedor</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>
               {items.map(item => {
-                const bajoStock = item.cantidad <= item.stock_minimo;
+                const bajoStock = Number(item.cantidad) <= 3;
                 return (
                   <tr key={item.id}><td>{item.id}</td><td>{item.producto}</td><td>{item.cantidad}</td><td>{item.unidad}</td><td>{item.stock_minimo}</td>
                     <td>{sucursales.find(s => s.id === item.sucursal_id)?.nombre || '—'}</td>

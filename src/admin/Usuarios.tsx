@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, X, ShieldCheck } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ShieldCheck, Search, Filter } from 'lucide-react';
 import { adminFetch, adminFetchList } from '../api/adminApi';
 
 const ROLES = [
@@ -19,6 +19,11 @@ const Usuarios = () => {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filtroRol, setFiltroRol] = useState('');
+  const [filtroSucursal, setFiltroSucursal] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
 
   const currentUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
   const isAdmin = currentUser.rol === 'admin';
@@ -94,12 +99,72 @@ const Usuarios = () => {
   const roleLabel = (rol) => ROLES.find(r => r.value === rol)?.label || rol;
   const roleBadge = (rol) => (rol === 'admin' ? 'badge-success' : rol === 'gerente' ? 'badge-info' : 'badge-warning');
 
+  const filtrados = items.filter((item) => {
+    const texto = `${item.nombre || ''} ${item.email || ''}`.toLowerCase();
+    if (busqueda.trim() && !texto.includes(busqueda.trim().toLowerCase())) return false;
+    if (filtroRol && item.rol !== filtroRol) return false;
+    if (filtroSucursal && String(item.sucursal_id || '') !== filtroSucursal) return false;
+    if (filtroEstado === 'activo' && !item.activo) return false;
+    if (filtroEstado === 'inactivo' && item.activo) return false;
+    return true;
+  });
+
   return (
     <div>
       <div className="admin-header-bar">
         <h1>Usuarios del Sistema</h1>
-        {isAdmin && <button className="btn btn-primary" onClick={openCreate}><Plus size={16} /> Registrar Usuario</button>}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8a7a6a' }} />
+            <input
+              className="form-control"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar personal por nombre o correo"
+              aria-label="Buscar personal"
+              style={{ paddingLeft: 32, minWidth: 240 }}
+            />
+          </div>
+          <button type="button" className={`btn ${showFilters ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setShowFilters((v) => !v)}>
+            <Filter size={16} /> Filtro
+          </button>
+          {isAdmin && <button className="btn btn-primary" onClick={openCreate}><Plus size={16} /> Registrar Usuario</button>}
+        </div>
       </div>
+
+      {showFilters && (
+        <div className="admin-card" style={{ marginBottom: 16 }}>
+          <div className="form-row" style={{ marginBottom: 0 }}>
+            <div className="form-group">
+              <label>Rol</label>
+              <select className="form-control" value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)}>
+                <option value="">Todos</option>
+                {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Sucursal</label>
+              <select className="form-control" value={filtroSucursal} onChange={(e) => setFiltroSucursal(e.target.value)}>
+                <option value="">Todas</option>
+                {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Estado</label>
+              <select className="form-control" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => { setFiltroRol(''); setFiltroSucursal(''); setFiltroEstado(''); setBusqueda(''); }}>
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isAdmin && (
         <div className="admin-card" style={{ borderLeft: '4px solid #e67e22' }}>
@@ -114,7 +179,7 @@ const Usuarios = () => {
           <table className="admin-table">
             <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Sucursal</th><th>Estado</th>{isAdmin && <th>Acciones</th>}</tr></thead>
             <tbody>
-              {items.map(item => (
+              {filtrados.map(item => (
                 <tr key={item.id}>
                   <td>{item.id}</td>
                   <td>{item.nombre}</td>
@@ -130,8 +195,8 @@ const Usuarios = () => {
                   )}
                 </tr>
               ))}
-              {items.length === 0 && (
-                <tr><td colSpan={isAdmin ? 7 : 6} style={{ textAlign: 'center', padding: 30, color: '#ccc' }}>No hay usuarios registrados.</td></tr>
+              {filtrados.length === 0 && (
+                <tr><td colSpan={isAdmin ? 7 : 6} style={{ textAlign: 'center', padding: 30, color: '#ccc' }}>{items.length === 0 ? 'No hay usuarios registrados.' : 'Ningún usuario coincide con la búsqueda o el filtro.'}</td></tr>
               )}
             </tbody>
           </table>
