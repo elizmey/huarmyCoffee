@@ -7,12 +7,12 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const pool = require('./db');
-require('dotenv').config();
+const { requireEnv } = require('./env');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'huarmy_coffee_secret_2026';
-const JWT_EXPIRES = process.env.JWT_EXPIRES || '24h';
+const PORT = requireEnv('API_PORT');
+const JWT_SECRET = requireEnv('JWT_SECRET');
+const JWT_EXPIRES = requireEnv('JWT_EXPIRES');
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, contentSecurityPolicy: false }));
 app.use(cors());
@@ -50,6 +50,32 @@ function crudHandler(tableName, fn) {
   };
 }
 
+// Whitelist de columnas reales por tabla (ver server/init.sql). Nunca interpolar
+// nombres de columna provenientes del body sin filtrarlos por esta lista: son
+// concatenados directamente en el SQL y un body arbitrario permitiría inyección SQL.
+const TABLE_COLUMNS = {
+  sucursales: ['nombre', 'direccion', 'telefono', 'capacidad_maxima', 'whatsapp', 'activo'],
+  clientes: ['nombre', 'email', 'telefono', 'direccion', 'created_at'],
+  proveedores: ['nombre', 'contacto', 'telefono', 'email', 'direccion', 'created_at'],
+  personal: ['nombre', 'cargo', 'telefono', 'email', 'salario', 'sucursal_id'],
+  categorias: ['nombre', 'descripcion', 'activo', 'created_at', 'updated_at'],
+  servicios: ['categoria_id', 'nombre', 'descripcion', 'precio', 'duracion', 'activo', 'created_at'],
+  inventarios: ['producto', 'cantidad', 'unidad', 'stock_minimo', 'sucursal_id', 'proveedor_id'],
+  citas: ['cliente_id', 'sucursal_id', 'servicio_id', 'fecha_hora', 'estado', 'created_at'],
+  galeria: ['titulo', 'url_imagen', 'categoria', 'orden', 'autor', 'comentario', 'calificacion', 'created_at'],
+  socios: ['nombre', 'tipo', 'contacto', 'telefono', 'email', 'direccion', 'created_at'],
+  comunicaciones: ['asunto', 'mensaje', 'destinatario', 'fecha_publicacion', 'activo', 'created_at'],
+  indicadores: ['nombre', 'perspectiva', 'valor_actual', 'meta', 'unidad', 'created_at'],
+  postulaciones: ['nombre', 'correo', 'telefono', 'mensaje', 'estado', 'fecha', 'created_at'],
+  configuracion: ['clave', 'valor', 'descripcion', 'created_at', 'updated_at'],
+  promociones: ['titulo', 'descripcion', 'tipo', 'precio', 'fecha_inicio', 'fecha_fin', 'url_imagen', 'activo', 'created_at'],
+};
+
+function allowedKeys(tableName, body) {
+  const allowed = TABLE_COLUMNS[tableName] || [];
+  return Object.keys(body).filter((k) => allowed.includes(k));
+}
+
 function crud(tableName, allowWrite = true) {
   const router = express.Router();
   router.use(authenticateToken);
@@ -64,18 +90,18 @@ function crud(tableName, allowWrite = true) {
   }));
   if (allowWrite) {
     router.post('/', crudHandler(tableName, async (req, res) => {
-      const keys = Object.keys(req.body);
-      const values = Object.values(req.body);
-      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío' });
+      const keys = allowedKeys(tableName, req.body);
+      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío o sin columnas válidas' });
+      const values = keys.map((k) => req.body[k]);
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
       const query = `INSERT INTO ${tableName} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
       const { rows } = await pool.query(query, values);
       res.status(201).json(rows[0]);
     }));
     router.patch('/:id', crudHandler(tableName, async (req, res) => {
-      const keys = Object.keys(req.body);
-      const values = Object.values(req.body);
-      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío' });
+      const keys = allowedKeys(tableName, req.body);
+      if (!keys.length) return res.status(400).json({ error: 'Cuerpo vacío o sin columnas válidas' });
+      const values = keys.map((k) => req.body[k]);
       const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
       const query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
       const { rows } = await pool.query(query, [...values, req.params.id]);
@@ -175,14 +201,18 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/dashboard', authenticateToken, async (_, res) => {
   try {
-    const tables = ['clientes', 'proveedores', 'socios', 'sucursales', 'personal', 'inventarios', 'comunicaciones'];
-    const counts = {};
-    for (const table of tables) {
-      const { rows } = await pool.query(`SELECT COUNT(*)::int AS c FROM ${table}`);
-      counts[table] = rows[0].c;
-    }
+    const { rows: countRows } = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM clientes) AS clientes,
+        (SELECT COUNT(*)::int FROM proveedores) AS proveedores,
+        (SELECT COUNT(*)::int FROM socios) AS socios,
+        (SELECT COUNT(*)::int FROM sucursales) AS sucursales,
+        (SELECT COUNT(*)::int FROM personal) AS personal,
+        (SELECT COUNT(*)::int FROM inventarios) AS inventarios,
+        (SELECT COUNT(*)::int FROM comunicaciones) AS comunicaciones
+    `);
     const { rows: indicadores } = await pool.query('SELECT * FROM indicadores ORDER BY id ASC');
-    res.json({ counts, indicadores });
+    res.json({ counts: countRows[0], indicadores });
   } catch (e) {
     console.error('Error en dashboard:', e);
     res.status(500).json({ error: 'Error al cargar el dashboard' });

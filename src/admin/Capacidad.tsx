@@ -27,10 +27,10 @@ const Capacidad = () => {
           return (
             <div key={s.id} className="capacity-card">
               <h3>{s.nombre}</h3>
-              <p style={{ color: '#5a4a3a', fontSize: 13 }}>{s.direccion}</p>
-              <div className="capacity-bar"><div className={`capacity-bar-fill ${level}`} style={{ width: `${pct}%` }} /></div>
+              <p className="capacity-address">{s.direccion}</p>
+              <div className="capacity-bar"><div className={`capacity-bar-fill ${level}`} style={{ '--fill': pct } as React.CSSProperties} /></div>
               <div className="capacity-info"><span>Personal: {empleados}</span><span>Capacidad: {s.capacidad_maxima}</span></div>
-              <div className="capacity-info" style={{ marginTop: 4 }}><span>Items inventario: {items}</span><span>Ocupación: {pct}%</span></div>
+              <div className="capacity-info capacity-info--spaced"><span>Items inventario: {items}</span><span>Ocupación: {pct}%</span></div>
             </div>
           );
         })}

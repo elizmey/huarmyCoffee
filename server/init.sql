@@ -96,8 +96,18 @@ CREATE TABLE IF NOT EXISTS galeria (
   url_imagen TEXT NOT NULL,
   categoria VARCHAR(50),
   orden INTEGER DEFAULT 0,
+  autor VARCHAR(150),
+  comentario TEXT,
+  calificacion SMALLINT,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Columnas agregadas después del lanzamiento inicial: ALTER ... IF NOT EXISTS
+-- para que las instalaciones ya existentes (donde el CREATE TABLE de arriba
+-- no vuelve a ejecutarse) también las reciban al reiniciar el servidor.
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS autor VARCHAR(150);
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS comentario TEXT;
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS calificacion SMALLINT;
 
 CREATE TABLE IF NOT EXISTS socios (
   id SERIAL PRIMARY KEY,
@@ -139,6 +149,15 @@ CREATE TABLE IF NOT EXISTS postulaciones (
   estado VARCHAR(20) DEFAULT 'pendiente',
   fecha DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS mision_vision (
+  id SERIAL PRIMARY KEY,
+  tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('mision', 'vision')),
+  contenido TEXT NOT NULL DEFAULT '',
+  activo BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS configuracion (

@@ -12,6 +12,23 @@ export function getJsonAuthHeaders(): Record<string, string> {
   return getAuthHeaders({ 'Content-Type': 'application/json' });
 }
 
+export type StoredAdminUser = {
+  id: number | string;
+  nombre: string;
+  email: string;
+  rol: string;
+  sucursal_id?: number | null;
+};
+
+export function getStoredAdminUser(): StoredAdminUser | null {
+  try {
+    const raw = localStorage.getItem('adminUser');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export class ApiError extends Error {
   status: number;
 

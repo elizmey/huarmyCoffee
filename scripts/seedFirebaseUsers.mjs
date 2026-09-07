@@ -2,27 +2,47 @@
  * Crea usuarios en Firebase Auth y perfiles en Firestore (colección usuarios).
  * Ejecutar: node scripts/seedFirebaseUsers.mjs
  */
-const API_KEY = "AIzaSyCE8V6B8xBc8DO98TpZxSGefLulU5b7tyM";
-const PROJECT_ID = "huarmy-coffee";
+import { config } from "dotenv";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.join(__dirname, "..", ".env") });
+
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Falta la variable de entorno ${name}. Copia .env.example a .env y complétala.`);
+  }
+  return value;
+}
+
+const API_KEY = requireEnv("REACT_APP_FIREBASE_API_KEY");
+const PROJECT_ID = requireEnv("REACT_APP_FIREBASE_PROJECT_ID");
+
+const ADMIN_EMAIL = requireEnv("SEED_ADMIN_EMAIL");
+const ADMIN_PASSWORD = requireEnv("SEED_ADMIN_PASSWORD");
+const RECEPCIONISTA_EMAIL = requireEnv("SEED_RECEPCIONISTA_EMAIL");
+const RECEPCIONISTA_PASSWORD = requireEnv("SEED_RECEPCIONISTA_PASSWORD");
 
 const USERS = [
   {
-    email: "admin@huarmycoffee.com",
-    password: "admin123",
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
     profile: {
       nombre: "Administrador",
-      email: "admin@huarmycoffee.com",
+      email: ADMIN_EMAIL,
       rol: "admin",
       activo: true,
       sucursal_id: 1,
     },
   },
   {
-    email: "recepcionista@huarmycoffee.com",
-    password: "recepcionista123",
+    email: RECEPCIONISTA_EMAIL,
+    password: RECEPCIONISTA_PASSWORD,
     profile: {
       nombre: "Recepcionista",
-      email: "recepcionista@huarmycoffee.com",
+      email: RECEPCIONISTA_EMAIL,
       rol: "recepcionista",
       activo: true,
       sucursal_id: 1,
@@ -116,9 +136,7 @@ async function main() {
       console.error(`❌ ${user.email}:`, err.message);
     }
   }
-  console.log("\nListo. Credenciales:");
-  console.log("  Admin: admin@huarmycoffee.com / admin123");
-  console.log("  Recepcionista: recepcionista@huarmycoffee.com / recepcionista123");
+  console.log("\nListo. Credenciales configuradas en .env (SEED_ADMIN_*, SEED_RECEPCIONISTA_*).");
 }
 
 main();

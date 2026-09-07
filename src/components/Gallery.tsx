@@ -15,7 +15,7 @@ function Gallery() {
     { src: "/imagenes/local/lugar4.jpg", alt: "Preparación de café" },
     { src: "/imagenes/local/lugar5.jpg", alt: "Detalles del local" },
     { src: "/imagenes/local/lugar6.jpg", alt: "Espacio familiar" },
-    { src: "/imagenes/clientes/reseña.png", alt: "Reseña destacada de una clienta" },
+    { src: "/imagenes/clientes/resena-destacada.png", alt: "Reseña destacada de una clienta" },
     { src: "/imagenes/clientes/cliente1.jpg", alt: "Reseña de cliente 1" },
     { src: "/imagenes/clientes/cliente2.jpg", alt: "Reseña de cliente 2" },
     { src: "/imagenes/clientes/cliente3.jpg", alt: "Reseña de cliente 3" },
@@ -35,6 +35,8 @@ function Gallery() {
         }
       })
       .catch(err => console.warn('Usando imágenes por defecto para la galería.', err));
+    // Se ejecuta solo al montar: no debe re-disparar el fetch al cambiar de idioma.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [isDragging, setIsDragging] = useState(false);

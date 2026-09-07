@@ -6,6 +6,7 @@ export const nav: TranslationMap = {
   promociones: { es: 'Promociones', en: 'Promotions', fr: 'Promotions', de: 'Aktionen', pt: 'Promoções' },
   nosotros: { es: 'Nuestra Historia', en: 'Our History', fr: 'Notre Histoire', de: 'Unsere Geschichte', pt: 'Nossa História' },
   servicios: { es: 'Servicios', en: 'Services', fr: 'Services', de: 'Dienstleistungen', pt: 'Serviços' },
+  cotizador_nav: { es: 'Cotizador', en: 'Quote Builder', fr: 'Devis', de: 'Kostenrechner', pt: 'Cotador' },
   ubicacion: { es: 'Ubicación', en: 'Location', fr: 'Localisation', de: 'Standort', pt: 'Localização' },
   contacto: { es: 'Contacto', en: 'Contact', fr: 'Contact', de: 'Kontakt', pt: 'Contato' },
   portal: { es: 'Portal Empresarial', en: 'Enterprise Portal', fr: 'Portail Entreprise', de: 'Unternehmensportal', pt: 'Portal Empresarial' },

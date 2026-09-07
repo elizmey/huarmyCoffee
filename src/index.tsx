@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import { LanguageProvider } from "./i18n";
-import "./firebase";
+import "./services/firebase";
 
 const container = document.getElementById("root");
 if (!container) {

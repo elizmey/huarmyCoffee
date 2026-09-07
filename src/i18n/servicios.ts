@@ -12,4 +12,5 @@ export const servicios: TranslationMap = {
   serv_item_6: { es: 'Brunchs medio día y media tarde', en: 'Midday and afternoon brunches', fr: 'Brunchs midi et après-midi', de: 'Brunch mittags und nachmittags', pt: 'Brunchs meio-dia e tarde' },
   serv_item_7: { es: 'Eventos empresariales, banquetes, bodas, bautizos y grados.', en: 'Corporate events, banquets, weddings, baptisms and graduations.', fr: 'Événements d\'entreprise, banquets, mariages, baptêmes et graduations.', de: 'Firmenveranstaltungen, Bankette, Hochzeiten, Taufen und Abschlussfeiern.', pt: 'Eventos empresariais, banquetes, casamentos, batizados e formaturas.' },
   serv_img_alt: { es: 'Foto de servicio', en: 'Service photo', fr: 'Photo de service', de: 'Servicefoto', pt: 'Foto de serviço' },
+  serv_otros: { es: 'Otros', en: 'Other', fr: 'Autres', de: 'Sonstiges', pt: 'Outros' },
 };

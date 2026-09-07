@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Users, Truck, Store, UserCircle, Package, MessageSquare, Handshake, Target, TrendingUp, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { adminFetch, ApiError } from '../api/adminApi';
+import { adminFetch, ApiError, getStoredAdminUser } from '../api/adminApi';
 
 type DashboardData = {
   counts: Record<string, number>;
@@ -17,8 +17,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = localStorage.getItem('adminUser');
-    if (stored) setUser(JSON.parse(stored));
+    setUser(getStoredAdminUser());
   }, []);
 
   useEffect(() => {
@@ -45,20 +44,20 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 60, color: '#8a7a6a' }}>Cargando panel de gestión...</div>;
+  if (loading) return <div className="admin-state admin-state--page">Cargando panel de gestión...</div>;
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: 60, color: '#e74c3c' }}>
+      <div className="admin-state admin-state--page admin-state--error">
         <p>{error}</p>
         {error.includes('API') && (
-          <p style={{ color: '#8a7a6a', fontSize: 14, marginTop: 12 }}>
+          <p className="error-hint">
             En una terminal ejecuta: <code>npm run api</code> y en otra: <code>npm start</code>
           </p>
         )}
       </div>
     );
   }
-  if (!data?.counts) return <div style={{ textAlign: 'center', padding: 60, color: '#e74c3c' }}>Error al cargar datos</div>;
+  if (!data?.counts) return <div className="admin-state admin-state--page admin-state--error">Error al cargar datos</div>;
 
   const { counts, indicadores } = data;
 
@@ -78,7 +77,7 @@ const Dashboard = () => {
     <div>
       <div className="admin-header-bar">
         <h1>Panel de Gestión</h1>
-        <div className="admin-user-info" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="admin-user-info">
           {user && <span>Bienvenido, {user.nombre}</span>}
           <button className="btn btn-primary" onClick={() => navigate('/admin/scorecard')}><BarChart3 size={16} /> Ver Tablero Completo</button>
         </div>
@@ -86,8 +85,13 @@ const Dashboard = () => {
 
       <div className="dashboard-grid">
         {statCards.map((card, i) => (
-          <div key={i} className="dashboard-stat" style={{ cursor: 'pointer' }} onClick={() => { const r = card.label.toLowerCase(); if (['clientes','proveedores','socios','sucursales'].includes(r)) navigate(`/admin/${r}`); }}>
-            <div className="dashboard-stat-icon" style={{ background: card.bg, color: card.color }}><card.icon size={24} /></div>
+          <div
+            key={i}
+            className="dashboard-stat"
+            style={{ '--stat-bg': card.bg, '--stat-color': card.color } as React.CSSProperties}
+            onClick={() => { const r = card.label.toLowerCase(); if (['clientes','proveedores','socios','sucursales'].includes(r)) navigate(`/admin/${r}`); }}
+          >
+            <div className="dashboard-stat-icon"><card.icon size={24} /></div>
             <div className="dashboard-stat-info"><h3>{card.value}</h3><p>{card.label}</p></div>
           </div>
         ))}
@@ -96,7 +100,7 @@ const Dashboard = () => {
       {chartData.length > 0 && (
         <div className="admin-card">
           <div className="admin-card-header">
-            <h2><TrendingUp size={18} style={{ marginRight: 8, color: '#d4a373' }} />Indicadores vs Metas</h2>
+            <h2><TrendingUp size={18} className="inline-icon" />Indicadores vs Metas</h2>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
@@ -113,18 +117,19 @@ const Dashboard = () => {
 
       <div className="admin-card">
         <div className="admin-card-header">
-          <h2><Target size={18} style={{ marginRight: 8, color: '#d4a373' }} />Resumen del Balanced Scorecard</h2>
+          <h2><Target size={18} className="inline-icon" />Resumen del Balanced Scorecard</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+        <div className="scorecard-summary-grid">
           {['financiera', 'cliente', 'procesos', 'aprendizaje'].map(p => {
             const items = indicadores?.filter(i => i.perspectiva === p) || [];
             const avg = items.length ? (items.reduce((s, i) => s + (i.valor_actual / i.meta), 0) / items.length * 100).toFixed(1) : 0;
             const labels = { financiera: '💰 Financiera', cliente: '👥 Cliente', procesos: '⚙️ Procesos', aprendizaje: '📚 Aprendizaje' };
+            const level = Number(avg) >= 80 ? 'high' : Number(avg) >= 50 ? 'medium' : 'low';
             return (
-              <div key={p} style={{ background: '#fdfaf7', padding: 16, borderRadius: 8, border: '1px solid #e8e0d8' }}>
-                <p style={{ margin: '0 0 4px', color: '#2c1a0f', fontWeight: 600, fontSize: 13 }}>{labels[p]}</p>
-                <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: Number(avg) >= 80 ? '#27ae60' : Number(avg) >= 50 ? '#f39c12' : '#e74c3c' }}>{avg}%</p>
-                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#8a7a6a' }}>{items.length} indicadores</p>
+              <div key={p} className="scorecard-summary-card">
+                <p className="scorecard-summary-label">{labels[p]}</p>
+                <p className={`scorecard-summary-value ${level}`}>{avg}%</p>
+                <p className="table-cell-subtitle">{items.length} indicadores</p>
               </div>
             );
           })}

@@ -12,6 +12,7 @@ import { contact } from './i18n/contact';
 import { trabaja } from './i18n/trabaja';
 import { promociones } from './i18n/promociones';
 import { portal } from './i18n/portal';
+import { cotizador } from './i18n/cotizador';
 
 export const LANG_CODES = ['es', 'en', 'fr', 'de', 'pt'] as const;
 export type LangCode = typeof LANG_CODES[number];
@@ -24,7 +25,7 @@ export const languages: { code: LangCode; name: string }[] = [
   { code: 'pt', name: 'Português' },
 ];
 
-const groups = [nav, access, home, menu, nosotros, servicios, testimonials, gallery, ubicacion, contact, trabaja, promociones, portal];
+const groups = [nav, access, home, menu, nosotros, servicios, testimonials, gallery, ubicacion, contact, trabaja, promociones, portal, cotizador];
 
 const translations: Record<string, Record<string, string>> = {
   es: {},

@@ -5,8 +5,9 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Image as ImageIcon,
+  Coffee,
   LockKeyhole,
+  PartyPopper,
   Plus,
   Save,
   Sparkles,
@@ -14,7 +15,6 @@ import {
   Trash2,
   Truck,
   Upload,
-  Users,
   UtensilsCrossed,
   X,
 } from "lucide-react";
@@ -67,35 +67,14 @@ const createDefaultPromotions = () => [
   },
 ];
 
-const createDefaultPackages = () => [
-  {
-    id: "pkg-1",
-    title: "Plan Bronce",
-    price: "Desde $5.50",
-    items: ["Menu diario", "1 bebida", "Pedido minimo por grupo"],
-  },
-  {
-    id: "pkg-2",
-    title: "Plan Oro",
-    price: "Desde $7.90",
-    items: ["Menu completo", "Bebida natural", "Atencion prioritaria"],
-  },
-  {
-    id: "pkg-3",
-    title: "Plan Equilibrda",
-    price: "A convenir",
-    items: ["Propuesta a medida", "Montaje especial", "Eventos empresariales"],
-  },
-];
-
 const defaultHighlight = {
-  eyebrow: "Equilibrda",
-  title: "Alimentacion equilibrada para empresas y grupos",
+  eyebrow: "Alimentación Equilibrada",
+  title: "Alimentación equilibrada para empresas y grupos",
   description:
-    "Diseñamos opciones equilibrda para equipos de trabajo, reuniones y eventos con una experiencia cuidada desde la cocina hasta la entrega.",
-  badgePrimary: "Equilibrda",
+    "Diseñamos opciones equilibradas para equipos de trabajo, reuniones y eventos con una experiencia cuidada desde la cocina hasta la entrega.",
+  badgePrimary: "Equilibrada",
   badgeSecondary: "Beneficios por volumen",
-  statOneLabel: "Atencion",
+  statOneLabel: "Atención",
   statOneValue: "Personalizada",
   statTwoLabel: "Entrega",
   statTwoValue: "Puntual",
@@ -103,67 +82,21 @@ const defaultHighlight = {
   statThreeValue: "Flexible",
 };
 
-const loadSavedState = () => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.promotions)) {
-      return null;
-    }
-
-    const defaults = createDefaultPromotions();
-    const packageDefaults = createDefaultPackages();
-
-    const promotions = parsed.promotions.map((promotion, index) => ({
-      ...defaults[index % defaults.length],
-      ...promotion,
-      image: isPersistableImage(promotion.image) ? promotion.image : defaults[index % defaults.length].image,
-    }));
-    const packages = Array.isArray(parsed.packages)
-      ? parsed.packages.map((pkg, index) => ({
-          ...packageDefaults[index % packageDefaults.length],
-          ...pkg,
-          items: Array.isArray(pkg.items) ? pkg.items.filter((item) => typeof item === "string") : packageDefaults[index % packageDefaults.length].items,
-        }))
-      : createDefaultPackages();
-    const featuredPromotionId =
-      typeof parsed.featuredPromotionId === "string" && promotions.some((promotion) => promotion.id === parsed.featuredPromotionId)
-        ? parsed.featuredPromotionId
-        : promotions[0]?.id || "";
-
-    const savedHighlight = { ...defaultHighlight, ...(parsed.highlight || {}) };
-    const normalizePremium = (value) =>
-      typeof value === "string" && value.trim().toLowerCase() === "premium" ? "Equilibrda" : value;
-    savedHighlight.eyebrow = normalizePremium(savedHighlight.eyebrow);
-    savedHighlight.badgePrimary = normalizePremium(savedHighlight.badgePrimary);
-    savedHighlight.description =
-      typeof savedHighlight.description === "string"
-        ? savedHighlight.description.replace(/premium/gi, "equilibrda")
-        : savedHighlight.description;
-
-    return {
-      promotions,
-      packages,
-      highlight: savedHighlight,
-      featuredPromotionId,
-    };
-  } catch {
-    return null;
-  }
+const PROMOTION_ICONS = {
+  Corporativa: Coffee,
+  Celebración: PartyPopper,
+  Logística: Truck,
 };
 
-const getPromotionIcon = (index) => {
-  const icons = [UtensilsCrossed, Users, Truck];
-  return icons[index % icons.length];
+const getPromotionIcon = (type) => PROMOTION_ICONS[type] || UtensilsCrossed;
+
+const PROMOTION_HIGHLIGHTS = {
+  Corporativa: "Mínimo 15 personas",
+  Celebración: "Ideal para tu celebración",
+  Logística: "Cobertura semanal programada",
 };
+
+const getPromotionHighlightChip = (type) => PROMOTION_HIGHLIGHTS[type] || "";
 
 const isPersistableImage = (value) =>
   typeof value === "string" &&
@@ -749,8 +682,9 @@ const Promociones = () => {
                     className={`promotions-grid ${visibleOrderedPromotions.length === 1 ? "promotions-grid--single" : ""}`}
                   >
                   {visibleOrderedPromotions.map((promotion, index) => {
-                    const Icon = getPromotionIcon(index);
+                    const Icon = getPromotionIcon(promotion.type);
                     const isFeatured = promotion.id === featuredPromotionId;
+                    const highlightChip = getPromotionHighlightChip(promotion.type);
 
                     return (
                       <motion.article
@@ -761,37 +695,27 @@ const Promociones = () => {
                         viewport={{ once: false }}
                         transition={{ duration: 0.55, delay: index * 0.08 }}
                       >
-                        <div className="promotion-card-media">
-                          <img src={promotion.image} alt={promotion.title} className="promotion-card-image" />
-                          <div className="promotion-card-media-badge">
-                            <Icon size={16} />
-                            {promotion.type}
+                        <div className="promotion-card-visual">
+                          <div className="promotion-icon">
+                            <Icon size={26} />
                           </div>
                           {isFeatured && (
-                            <div className="promotion-card-featured-badge">
-                              <Star size={15} />
+                            <span className="promotion-card-featured-badge">
+                              <Star size={13} />
                               Destacada
-                            </div>
+                            </span>
                           )}
-                        </div>
-
-                        <div className="promotion-icon">
-                          <Icon size={22} />
                         </div>
 
                         <div className="promotion-card-copy">
                           <span className="promotion-tag">{promotion.tag}</span>
                           <h3>{promotion.title}</h3>
                           <p>{promotion.description}</p>
-                          <small>{promotion.detail}</small>
+                          {highlightChip && <span className="promotion-highlight-chip">{highlightChip}</span>}
                           <div className="promotion-meta-row">
                             <span className="promotion-meta-pill">
                               <CalendarDays size={14} />
                               {getPromotionScheduleLabel(promotion)}
-                            </span>
-                            <span className="promotion-meta-pill promotion-meta-pill--soft">
-                              <ImageIcon size={14} />
-                              {promotion.image ? "Imagen cargada" : "Sin imagen"}
                             </span>
                           </div>
                           <button
@@ -917,46 +841,27 @@ const Promociones = () => {
                 <aside className="promotions-editor-list">
                   <div className="promotions-editor-list-header">
                     <h4>Promociones</h4>
-                    <div className="promotions-editor-list-actions promotions-editor-list-actions--inline" style={{gap: '8px', display: 'flex', background: 'none', boxShadow: 'none', padding: 0}}>
+                    <div className="promotions-editor-list-actions promotions-editor-list-actions--inline editor-actions-flat">
                       <button
-  type="button"
-  onClick={addPromotion}
-  aria-label="Agregar promocion"
-  title="Agregar promocion"
-  style={{
-    backgroundColor: "#22c55e",
-    border: "none",
-    padding: "6px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}
->
-  <Plus size={14} color="#fff" />
-</button>
+                        type="button"
+                        onClick={addPromotion}
+                        aria-label="Agregar promocion"
+                        title="Agregar promocion"
+                        className="promo-add-btn"
+                      >
+                        <Plus size={14} color="#fff" />
+                      </button>
 
-<button
-  type="button"
-  onClick={removeSelectedPromotion}
-  disabled={!selectedPromotion}
-  aria-label="Eliminar promocion seleccionada"
-  title="Eliminar promocion seleccionada"
-  style={{
-    backgroundColor: "#ef4444",
-    border: "none",
-    padding: "6px",
-    borderRadius: "6px",
-    cursor: selectedPromotion ? "pointer" : "not-allowed",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    opacity: selectedPromotion ? 1 : 0.5
-  }}
->
-  <Trash2 size={14} color="#fff" />
-</button>
+                      <button
+                        type="button"
+                        onClick={removeSelectedPromotion}
+                        disabled={!selectedPromotion}
+                        aria-label="Eliminar promocion seleccionada"
+                        title="Eliminar promocion seleccionada"
+                        className="promo-remove-btn"
+                      >
+                        <Trash2 size={14} color="#fff" />
+                      </button>
                     </div>
                   </div>
                   {promotions.map((promotion) => (
@@ -1022,8 +927,8 @@ const Promociones = () => {
                       </label>
 
 
-                      <div style={{ display: "flex", gap: "1rem", flexWrap: "nowrap", marginBottom: "1.5rem" }}>
-                        <label style={{ flex: 1, minWidth: 180 }}>
+                      <div className="promo-date-row">
+                        <label className="promo-date-field">
                           <span>Fecha de inicio</span>
                           <input
                             type="date"
@@ -1032,7 +937,7 @@ const Promociones = () => {
                             onChange={(event) => updateSelectedPromotion("startDate", event.target.value)}
                           />
                         </label>
-                        <label style={{ flex: 1, minWidth: 180 }}>
+                        <label className="promo-date-field">
                           <span>Fecha de finalizacion</span>
                           <input
                             type="date"
@@ -1041,7 +946,7 @@ const Promociones = () => {
                             onChange={(event) => updateSelectedPromotion("endDate", event.target.value)}
                           />
                         </label>
-                        <label style={{ flex: 1, minWidth: 180 }}>
+                        <label className="promo-date-field">
                           <span>Etiqueta breve</span>
                           <input
                             type="text"
@@ -1131,8 +1036,8 @@ const Promociones = () => {
               <div className="promotions-editor-packages-page">
                 <div className="promotions-editor-packages">
                   <h4>Editor de paquetes</h4>
-                  <div className="promotions-editor-packages-actions" style={{gap: '8px', display: 'flex', background: 'none', boxShadow: 'none', padding: 0}}>
-                    <button type="button" style={{background: 'none', boxShadow: 'none', padding: 0, border: 'none'}} onClick={addPackage}>
+                  <div className="promotions-editor-packages-actions editor-actions-flat">
+                    <button type="button" className="btn-flat-reset" onClick={addPackage}>
                       <Plus size={14} />
                       Nuevo paquete
                     </button>

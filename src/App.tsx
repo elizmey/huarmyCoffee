@@ -12,6 +12,7 @@ import Nosotros from './components/Nosotros';
 import Servicios from './components/Servicios';
 import Promociones from './components/Promociones';
 import Ubicacion from './components/Ubicacion';
+import Cotizador from './components/Cotizador';
 
 import AdminLayout from './admin/AdminLayout';
 import Login from './admin/Login';
@@ -66,21 +67,13 @@ function PublicSite() {
     return () => { window.removeEventListener('keydown', handleKeyDown); document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
-  const headerStyles: Record<string, React.CSSProperties> = {
-    header: { background: 'linear-gradient(135deg, #2c1a0f 0%, #3e2c23 100%)', padding: '10px 18px', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', borderBottom: '2px solid #d4a373' },
-    container: { maxWidth: 1440, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20 },
-    logo: { height: 58, width: 'auto', borderRadius: '50%', border: '3px solid #d4a373' },
-    nav: { display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' },
-    mobileButton: { display: 'none', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 999, border: '1px solid rgba(245,232,211,0.24)', background: 'rgba(255,255,255,0.06)', color: '#f5e8d3', cursor: 'pointer', padding: 0 },
-    link: { color: '#f5e8d3', textDecoration: 'none', fontSize: 15, fontWeight: 500, padding: '8px 14px', borderRadius: 30, transition: 'all 0.3s', border: '1px solid transparent' },
-  };
-
   const navItems = [
     { id: 'inicio', label: t('inicio') },
     { id: 'menu', label: t('menu') },
     { id: 'promociones', label: t('promociones') },
     { id: 'nosotros', label: t('nosotros') },
     { id: 'servicios', label: t('servicios') },
+    { id: 'cotizador', label: t('cotizador_nav') },
     { id: 'ubicacion', label: t('ubicacion') },
     { id: 'contact', label: t('contacto') },
     ...(mostrarTrabaja ? [{ id: 'work', label: t('trabaja') }] : []),
@@ -90,26 +83,24 @@ function PublicSite() {
 
   return (
     <div className="App" role="application">
-      <a href="#main-content" style={{ position: 'absolute', left: '-999px', top: 0, zIndex: 9999, padding: '10px', background: '#d4a373', color: '#2c1a0f' }} tabIndex={0}>
+      <a href="#main-content" className="skip-link" tabIndex={0}>
         {t('skip_link')}
       </a>
-      <header style={headerStyles.header}>
-        <div style={headerStyles.container}>
+      <header className="site-header">
+        <div className="site-header-container">
           <a href="/" aria-label="Ir al inicio">
-            <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" style={headerStyles.logo} />
+            <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" className="site-logo" />
           </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <nav style={headerStyles.nav} className="desktop-nav" aria-label="Navegación principal">
+          <div className="site-header-actions">
+            <nav className="site-nav desktop-nav" aria-label="Navegación principal">
               {navItems.map((item) => (
-                <a key={item.id} href={item.href || `#${item.id}`} style={headerStyles.link} aria-label={item.icon ? item.label : undefined} title={item.icon ? item.label : undefined}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d4a373'; e.currentTarget.style.color = '#2c1a0f'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#f5e8d3'; }}>
+                <a key={item.id} href={item.href || `#${item.id}`} className="site-nav-link" aria-label={item.icon ? item.label : undefined} title={item.icon ? item.label : undefined}>
                   {item.icon ? <item.icon size={18} strokeWidth={2.2} aria-hidden="true" /> : item.label}
                 </a>
               ))}
             </nav>
           </div>
-          <button type="button" style={headerStyles.mobileButton} className="mobile-menu-button" aria-label="Abrir menú" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} tabIndex={0}>
+          <button type="button" className="site-mobile-button mobile-menu-button" aria-label="Abrir menú" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} tabIndex={0}>
             <MenuIcon size={22} strokeWidth={2.2} />
           </button>
         </div>
@@ -117,15 +108,15 @@ function PublicSite() {
 
       <div className={`mobile-menu-backdrop ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen(false)} />
       <aside className={`mobile-menu-drawer ${mobileMenuOpen ? 'open' : ''}`} aria-hidden={!mobileMenuOpen}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#f5e8d3', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div className="mobile-menu-drawer-title">
           <span>{t('drawer_title')}</span>
-          <button type="button" style={{ width: 42, height: 42, border: '1px solid rgba(245,232,211,0.18)', borderRadius: 999, background: 'rgba(255,255,255,0.06)', color: '#f5e8d3', cursor: 'pointer' }} aria-label="Cerrar menú" onClick={() => setMobileMenuOpen(false)}>
+          <button type="button" className="mobile-menu-close-btn" aria-label="Cerrar menú" onClick={() => setMobileMenuOpen(false)}>
             <X size={22} strokeWidth={2.2} />
           </button>
         </div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <nav className="mobile-menu-nav">
           {navItems.map((item) => (
-            <a key={item.id} href={item.href || `#${item.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, textDecoration: 'none', color: '#f5e8d3', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,232,211,0.12)', fontWeight: 600 }} aria-label={item.icon ? item.label : undefined} onClick={() => setMobileMenuOpen(false)}>
+            <a key={item.id} href={item.href || `#${item.id}`} className="mobile-menu-link" aria-label={item.icon ? item.label : undefined} onClick={() => setMobileMenuOpen(false)}>
               {item.icon ? <item.icon size={18} aria-hidden="true" /> : item.label}
             </a>
           ))}
@@ -133,13 +124,13 @@ function PublicSite() {
       </aside>
 
       <div id="site-content">
-        <div style={{ height: 84 }} />
+        <div className="site-content-spacer" />
         <main id="main-content">
-          <Home /><Menu /><Promociones /><Nosotros /><Servicios /><Testimonials /><Gallery /><Ubicacion /><Contact />{mostrarTrabaja && <Trabaja />}
+          <Home /><Menu /><Promociones /><Nosotros /><Servicios /><Cotizador /><Testimonials /><Gallery /><Ubicacion /><Contact />{mostrarTrabaja && <Trabaja />}
         </main>
 
-        <footer style={{ textAlign: 'center', padding: '30px', background: '#2c1a0f', color: '#d4a373', borderTop: '2px solid #d4a373' }}>
-          <p style={{ margin: 0, fontSize: '14px', letterSpacing: '1px' }}>{t('derechos')}</p>
+        <footer className="site-footer">
+          <p>{t('derechos')}</p>
         </footer>
       </div>
       <AccessibilityWidget />

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { Eye, ZoomIn, ZoomOut, Check, Volume2, Images, StopCircle } from 'lucide-react';
 import { useTranslation, languages } from '../i18n';
+import '../assets/css/style.css';
 
 const readStoredInt = (key: string, fallback: number) => {
   const v = localStorage.getItem(key);
@@ -54,7 +55,7 @@ const AccessibilityWidget = () => {
     setIsOpen((prev) => !prev);
   };
 
-  const applyAccessibility = () => {
+  const applyAccessibility = useCallback(() => {
     const body = document.body;
     const app = document.querySelector('.App');
 
@@ -73,11 +74,11 @@ const AccessibilityWidget = () => {
     localStorage.setItem('access_highContrast', String(highContrast));
     localStorage.setItem('access_grayscale', String(grayscale));
     localStorage.setItem('access_legibleFont', String(legibleFont));
-  };
+  }, [fontSize, highContrast, grayscale, legibleFont]);
 
   useLayoutEffect(() => {
     applyAccessibility();
-  }, [fontSize, highContrast, grayscale, legibleFont]);
+  }, [applyAccessibility]);
 
   const resetAll = () => {
     setFontSize(100);
@@ -141,96 +142,35 @@ const AccessibilityWidget = () => {
     speak(t('access_page_intro') + text);
   };
 
-  const actionButton = (active: boolean): React.CSSProperties => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '8px 10px',
-    border: active ? '2px solid #d4a373' : '1px solid #ddd',
-    borderRadius: 6,
-    background: active ? '#fdfaf7' : 'white',
-    cursor: 'pointer',
-    textAlign: 'left',
-    fontSize: 13,
-    fontWeight: 500,
-    color: '#2c1a0f',
-    gap: 8,
-  });
-
   return (
-    <div className="accessibility-widget-root" style={{ position: 'fixed', bottom: 30, left: 24, zIndex: 9999 }}>
+    <div className="accessibility-widget-root">
       <button
         type="button"
         onClick={handleOpen}
         aria-label={t('access_btn_label')}
         title={t('access_btn_label')}
         aria-expanded={isOpen}
-        style={{
-          width: 50,
-          height: 50,
-          borderRadius: '50%',
-          background: '#2c1a0f',
-          color: '#d4a373',
-          border: '2px solid #d4a373',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          transition: 'all 0.3s',
-        }}
+        className="a11y-toggle-btn"
       >
         <Eye size={24} />
       </button>
 
       {isOpen && (
-        <div
-          className="accessibility-widget-panel"
-          style={{
-            position: 'absolute',
-            bottom: '120%',
-            left: 0,
-            background: 'white',
-            borderRadius: 12,
-            boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-            width: 260,
-            padding: 16,
-            border: '1px solid #e8e0d8',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            maxHeight: '70vh',
-            overflowY: 'auto',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f5ebe6', paddingBottom: 8 }}>
-            <span style={{ fontWeight: 700, color: '#2c1a0f', fontSize: 14 }}>{t('access_title')}</span>
-            <button
-              type="button"
-              onClick={resetAll}
-              style={{ background: 'none', border: 'none', color: '#c0392b', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
-            >
+        <div className="accessibility-widget-panel">
+          <div className="a11y-panel-header">
+            <span className="a11y-panel-title">{t('access_title')}</span>
+            <button type="button" onClick={resetAll} className="a11y-reset-btn">
               {t('access_reset')}
             </button>
           </div>
 
           <div>
-            <span style={{ fontSize: 12, color: '#8a7a6a', display: 'block', marginBottom: 6 }}>{t('access_language')}</span>
+            <span className="a11y-field-label">{t('access_language')}</span>
             <select
               aria-label={t('access_language')}
               value={lang}
               onChange={(e) => changeLanguage(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                border: '1px solid #ddd',
-                borderRadius: 6,
-                background: 'white',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#2c1a0f',
-              }}
+              className="a11y-select"
             >
               {languages.map((l) => (
                 <option key={l.code} value={l.code}>{l.name}</option>
@@ -239,12 +179,12 @@ const AccessibilityWidget = () => {
           </div>
 
           <div>
-            <span style={{ fontSize: 12, color: '#8a7a6a', display: 'block', marginBottom: 6 }}>{t('access_text_size')}: {fontSize}%</span>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <span className="a11y-field-label">{t('access_text_size')}: {fontSize}%</span>
+            <div className="a11y-btn-row">
               <button
                 type="button"
                 onClick={() => setFontSize((prev) => Math.max(prev - 10, 80))}
-                style={{ flex: 1, padding: '6px', border: '1px solid #ddd', borderRadius: 6, display: 'flex', justifyContent: 'center', cursor: 'pointer', background: 'white' }}
+                className="a11y-icon-btn"
                 aria-label={t('access_zoom_out')}
               >
                 <ZoomOut size={16} />
@@ -252,7 +192,7 @@ const AccessibilityWidget = () => {
               <button
                 type="button"
                 onClick={() => setFontSize((prev) => Math.min(prev + 10, 150))}
-                style={{ flex: 1, padding: '6px', border: '1px solid #ddd', borderRadius: 6, display: 'flex', justifyContent: 'center', cursor: 'pointer', background: 'white' }}
+                className="a11y-icon-btn"
                 aria-label={t('access_zoom_in')}
               >
                 <ZoomIn size={16} />
@@ -260,46 +200,34 @@ const AccessibilityWidget = () => {
             </div>
           </div>
 
-          <button type="button" onClick={() => setHighContrast(!highContrast)} style={actionButton(highContrast)}>
+          <button type="button" onClick={() => setHighContrast(!highContrast)} className={`a11y-toggle ${highContrast ? 'active' : ''}`}>
             <span>{t('access_contrast')}</span>
             {highContrast && <Check size={16} color="#d4a373" />}
           </button>
 
-          <button type="button" onClick={() => setGrayscale(!grayscale)} style={actionButton(grayscale)}>
+          <button type="button" onClick={() => setGrayscale(!grayscale)} className={`a11y-toggle ${grayscale ? 'active' : ''}`}>
             <span>{t('access_grayscale')}</span>
             {grayscale && <Check size={16} color="#d4a373" />}
           </button>
 
-          <button type="button" onClick={() => setLegibleFont(!legibleFont)} style={actionButton(legibleFont)}>
+          <button type="button" onClick={() => setLegibleFont(!legibleFont)} className={`a11y-toggle ${legibleFont ? 'active' : ''}`}>
             <span>{t('access_legible')}</span>
             {legibleFont && <Check size={16} color="#d4a373" />}
           </button>
 
           <div>
-            <span style={{ fontSize: 12, color: '#8a7a6a', display: 'block', marginBottom: 6 }}>{t('access_narrated')}</span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                type="button"
-                onClick={readPageText}
-                style={{ flex: 1, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, cursor: 'pointer', background: 'white', fontSize: 12, fontWeight: 600, color: '#2c1a0f' }}
-              >
+            <span className="a11y-field-label">{t('access_narrated')}</span>
+            <div className="a11y-btn-row">
+              <button type="button" onClick={readPageText} className="a11y-labeled-btn">
                 <Volume2 size={16} /> {t('access_read_page')}
               </button>
-              <button
-                type="button"
-                onClick={stopSpeaking}
-                style={{ flex: 1, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, cursor: 'pointer', background: 'white', fontSize: 12, fontWeight: 600, color: '#2c1a0f' }}
-              >
+              <button type="button" onClick={stopSpeaking} className="a11y-labeled-btn">
                 <StopCircle size={16} /> {t('access_stop')}
               </button>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={readImageDescriptions}
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, background: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#2c1a0f' }}
-          >
+          <button type="button" onClick={readImageDescriptions} className="a11y-full-btn">
             <Images size={16} /> {t('access_images')}
           </button>
         </div>

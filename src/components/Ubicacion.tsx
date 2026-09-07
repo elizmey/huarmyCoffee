@@ -22,7 +22,6 @@ function Ubicacion() {
             src="https://www.google.com/maps?q=Av.%20Equinoccial%20Quito&output=embed"
             width="100%"
             height="400"
-            style={{ border: 0 }}
             allowFullScreen
             loading="lazy"
             title={t("ubicacion_mapa_titulo")}

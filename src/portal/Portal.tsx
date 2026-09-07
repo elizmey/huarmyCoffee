@@ -4,6 +4,7 @@ import { Target, Eye, Coffee, MapPin, Phone, ChevronRight, ArrowLeft, Shield } f
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../api';
 import { useTranslation } from '../i18n';
+import './Portal.css';
 
 const defaultMision = 'Ofrecer una experiencia gastronómica auténtica que rescata los sabores tradicionales ecuatorianos, brindando a nuestros clientes calidad, calidez y un ambiente acogedor en cada una de nuestras sucursales.';
 const defaultVision = 'Ser la cadena de cafeterías y restaurantes ecuatorianos más reconocida del país para 2030, expandiendo nuestra propuesta gastronómica con valores de identidad, sostenibilidad y excelencia en el servicio.';
@@ -38,112 +39,76 @@ const Portal = () => {
   }, []);
 
   return (
-    <div style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", minHeight: '100vh' }}>
+    <div className="portal-page">
       {/* Header */}
-      <header style={{
-        background: 'linear-gradient(135deg, #2c1a0f 0%, #3e2c23 100%)',
-        padding: '16px 40px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '2px solid #d4a373',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" style={{ height: 48, width: 48, borderRadius: '50%', border: '2px solid #d4a373' }} />
+      <header className="portal-header portal-gradient-bg">
+        <div className="portal-brand">
+          <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" className="portal-brand-logo" />
           <div>
-            <div style={{ color: '#d4a373', fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>Huarmy Coffee</div>
-            <div style={{ color: '#f5e8d3', fontSize: 11, opacity: 0.7 }}>{t('portal_title')}</div>
+            <div className="portal-brand-name">Huarmy Coffee</div>
+            <div className="portal-brand-subtitle">{t('portal_title')}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <a href="/" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            color: '#f5e8d3', textDecoration: 'none', fontSize: 13, fontWeight: 500,
-            padding: '8px 16px', borderRadius: 8,
-            border: '1px solid rgba(245,232,211,0.2)',
-            transition: 'all 0.2s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,232,211,0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
+        <div className="portal-header-actions">
+          <a href="/" className="portal-link-btn">
             <ArrowLeft size={14} /> {t('portal_public_site')}
           </a>
-          <button onClick={() => navigate('/admin/login')} style={{
-            padding: '9px 20px', background: '#d4a373', border: 'none',
-            borderRadius: 8, color: '#2c1a0f', fontWeight: 700, cursor: 'pointer',
-            fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
-            transition: 'background 0.2s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = '#c49262'}
-            onMouseLeave={e => e.currentTarget.style.background = '#d4a373'}
-          >
+          <button onClick={() => navigate('/admin/login')} className="portal-admin-btn">
             <Shield size={14} /> {t('portal_admin_access')}
           </button>
         </div>
       </header>
 
       {/* Hero */}
-      <section style={{
-        background: 'linear-gradient(135deg, #2c1a0f 0%, #3e2c23 100%)',
-        padding: '80px 40px',
-        textAlign: 'center',
-      }}>
+      <section className="portal-hero portal-gradient-bg">
         <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-          <img src="/imagenes/local/logo-lugar.jpg" alt={t('portal_logo_alt')} style={{ width: 110, height: 110, borderRadius: '50%', border: '4px solid #d4a373', marginBottom: 24, boxShadow: '0 0 30px rgba(212,163,115,0.3)' }} />
-          <h1 style={{ color: '#f5e8d3', fontSize: 'clamp(24px, 5vw, 42px)', margin: '0 0 16px', letterSpacing: 2 }}>{t('portal_title')}</h1>
-          <p style={{ color: '#d4a373', fontSize: 'clamp(14px, 2.5vw, 18px)', maxWidth: 600, margin: '0 auto 36px', lineHeight: 1.6 }}>
+          <img src="/imagenes/local/logo-lugar.jpg" alt={t('portal_logo_alt')} className="portal-hero-logo" />
+          <h1 className="portal-hero-title">{t('portal_title')}</h1>
+          <p className="portal-hero-subtitle">
             {t('portal_hero_subtitle')}
           </p>
-          <a href="#mision" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '12px 30px', background: '#d4a373', color: '#2c1a0f',
-            textDecoration: 'none', borderRadius: 30, fontWeight: 700, fontSize: 15,
-          }}>
+          <a href="#mision" className="portal-hero-cta">
             {t('portal_learn_more')} <ChevronRight size={16} />
           </a>
         </motion.div>
       </section>
 
       {/* Misión y Visión */}
-      <section id="mision" style={{ padding: 'clamp(40px, 6vw, 80px) clamp(20px, 5vw, 60px)', background: '#fdfaf7' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
+      <section id="mision" className="portal-section portal-section--tint">
+        <div className="portal-mission-grid">
           <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-            style={{ background: 'white', padding: 'clamp(24px, 4vw, 40px)', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', borderLeft: '5px solid #d4a373' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            className="portal-mission-card">
+            <div className="portal-mission-header">
               <Target size={32} color="#d4a373" />
-              <h2 style={{ margin: 0, color: '#2c1a0f', fontSize: 24 }}>{t('portal_mision')}</h2>
+              <h2>{t('portal_mision')}</h2>
             </div>
-            <p style={{ color: '#5a4a3a', lineHeight: 1.8, fontSize: 15, margin: 0 }}>{mision}</p>
+            <p className="portal-mission-text">{mision}</p>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-            style={{ background: 'white', padding: 'clamp(24px, 4vw, 40px)', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', borderLeft: '5px solid #c49262' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            className="portal-mission-card vision">
+            <div className="portal-mission-header">
               <Eye size={32} color="#c49262" />
-              <h2 style={{ margin: 0, color: '#2c1a0f', fontSize: 24 }}>{t('portal_vision')}</h2>
+              <h2>{t('portal_vision')}</h2>
             </div>
-            <p style={{ color: '#5a4a3a', lineHeight: 1.8, fontSize: 15, margin: 0 }}>{vision}</p>
+            <p className="portal-mission-text">{vision}</p>
           </motion.div>
         </div>
       </section>
 
       {/* Servicios Corporativos */}
       {servicios.length > 0 && (
-        <section style={{ padding: 'clamp(40px, 6vw, 80px) clamp(20px, 5vw, 60px)', background: 'white' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <h2 style={{ textAlign: 'center', color: '#2c1a0f', fontSize: 'clamp(22px, 4vw, 32px)', marginBottom: 40 }}>{t('portal_corporate_services')}</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+        <section className="portal-section portal-section--white">
+          <div className="portal-section-inner">
+            <h2 className="portal-section-title">{t('portal_corporate_services')}</h2>
+            <div className="portal-cards-grid">
               {servicios.map((s, i) => (
                 <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                  style={{ background: '#fdfaf7', padding: 24, borderRadius: 12, border: '1px solid #e8e0d8' }}>
-                  <h3 style={{ color: '#2c1a0f', margin: '0 0 8px', fontSize: 16 }}>{s.nombre}</h3>
-                  <p style={{ color: '#8a7a6a', fontSize: 13, margin: '0 0 10px', lineHeight: 1.5 }}>{s.descripcion}</p>
-                  <span style={{ color: '#d4a373', fontWeight: 700, fontSize: 16 }}>{Number(s.precio || 0).toFixed(2)}</span>
-                  {s.categoria_nombre && <span style={{ color: '#8a7a6a', fontSize: 12, marginLeft: 10 }}>— {s.categoria_nombre}</span>}
+                  className="portal-service-card">
+                  <h3>{s.nombre}</h3>
+                  <p>{s.descripcion}</p>
+                  <span className="portal-service-price">{Number(s.precio || 0).toFixed(2)}</span>
+                  {s.categoria_nombre && <span className="portal-service-category">— {s.categoria_nombre}</span>}
                 </motion.div>
               ))}
             </div>
@@ -153,20 +118,20 @@ const Portal = () => {
 
       {/* Sucursales */}
       {sucursales.length > 0 && (
-        <section style={{ padding: 'clamp(40px, 6vw, 80px) clamp(20px, 5vw, 60px)', background: '#fdfaf7' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <h2 style={{ textAlign: 'center', color: '#2c1a0f', fontSize: 'clamp(22px, 4vw, 32px)', marginBottom: 40 }}>{t('portal_branches')}</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+        <section className="portal-section portal-section--tint">
+          <div className="portal-section-inner">
+            <h2 className="portal-section-title">{t('portal_branches')}</h2>
+            <div className="portal-cards-grid portal-cards-grid--branches">
               {sucursales.map((s, i) => (
                 <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                  style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                  className="portal-branch-card">
                   <Coffee size={24} color="#d4a373" />
-                  <h3 style={{ color: '#2c1a0f', margin: '10px 0 8px', fontSize: 17 }}>{s.nombre}</h3>
-                  <p style={{ color: '#5a4a3a', fontSize: 13, margin: '4px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <h3>{s.nombre}</h3>
+                  <p className="portal-branch-line">
                     <MapPin size={14} color="#d4a373" /> {s.direccion}
                   </p>
                   {s.telefono && (
-                    <p style={{ color: '#5a4a3a', fontSize: 13, margin: '4px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p className="portal-branch-line">
                       <Phone size={14} color="#d4a373" /> {s.telefono}
                     </p>
                   )}
@@ -178,23 +143,18 @@ const Portal = () => {
       )}
 
       {/* CTA */}
-      <section style={{ padding: 'clamp(50px, 8vw, 80px) clamp(20px, 5vw, 60px)', background: 'linear-gradient(135deg, #2c1a0f 0%, #3e2c23 100%)', textAlign: 'center' }}>
-        <h2 style={{ color: '#f5e8d3', fontSize: 'clamp(20px, 4vw, 30px)', marginBottom: 16 }}>{t('portal_cta_title')}</h2>
-        <p style={{ color: '#d4a373', marginBottom: 30, maxWidth: 520, margin: '0 auto 30px', lineHeight: 1.6 }}>
+      <section className="portal-cta-section portal-gradient-bg">
+        <h2 className="portal-cta-title">{t('portal_cta_title')}</h2>
+        <p className="portal-cta-subtitle">
           {t('portal_cta_subtitle')}
         </p>
-        <a href="/#contact" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '14px 32px', background: '#d4a373', color: '#2c1a0f',
-          textDecoration: 'none', borderRadius: 30, fontWeight: 700, fontSize: 16,
-          boxShadow: '0 4px 20px rgba(212,163,115,0.4)',
-        }}>
+        <a href="/#contact" className="portal-cta-button">
           {t('portal_cta_button')} <ChevronRight size={18} />
         </a>
       </section>
 
-      <footer style={{ textAlign: 'center', padding: '28px 20px', background: '#1a0e08', color: '#8a7a6a', fontSize: 13 }}>
-        <p style={{ margin: 0 }}>{t('portal_footer')}</p>
+      <footer className="portal-footer">
+        <p>{t('portal_footer')}</p>
       </footer>
     </div>
   );

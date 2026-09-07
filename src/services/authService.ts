@@ -2,7 +2,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth } from './firebase';
 import { apiUrl } from '../api';
 
 export type AdminUser = {

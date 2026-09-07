@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 import { useTranslation } from "../i18n";
 import { apiUrl } from "../api";
 import "../assets/css/style.css";
@@ -9,6 +10,9 @@ type GaleriaItem = {
   titulo?: string;
   url_imagen: string;
   categoria?: string;
+  autor?: string | null;
+  comentario?: string | null;
+  calificacion?: number | null;
 };
 
 const Clients = () => {
@@ -52,11 +56,11 @@ const Clients = () => {
         </motion.div>
 
         {loading ? (
-          <p style={{ textAlign: "center", color: "#8a7a6a", padding: "40px" }}>
+          <p className="section-status-text section-status-text--block">
             {t("test_loading") || "Cargando reseñas..."}
           </p>
         ) : clients.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#8a7a6a", padding: "40px" }}>
+          <p className="section-status-text section-status-text--block">
             {t("test_empty") || "Agrega reseñas en Admin → Galería (categoría: reseña)."}
           </p>
         ) : (
@@ -65,23 +69,31 @@ const Clients = () => {
               <motion.div
                 key={client.id}
                 className="client-card-large"
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: false }}
                 transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
-                whileHover={{ scale: 1.04, rotate: index % 2 === 0 ? 1 : -1 }}
+                whileHover={{ y: -6 }}
               >
                 <div className="client-review-card">
                   <div className="client-review-top">
                     <div className="client-review-avatar">
-                      <img src={client.url_imagen} alt={client.titulo || "Reseña"} />
+                      <img src={client.url_imagen} alt={client.autor || client.titulo || "Reseña"} />
                     </div>
                     <div className="client-review-meta">
                       <div className="client-review-name-row">
-                        <h3>{client.titulo || t("test_client") || "Cliente"}</h3>
+                        <h3>{client.autor || client.titulo || t("test_client") || "Cliente"}</h3>
+                      </div>
+                      <div className="client-review-rating" aria-label={`${client.calificacion || 5} de 5 estrellas`}>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} size={16} fill={i < (client.calificacion || 5) ? 'currentColor' : 'none'} strokeWidth={1.5} />
+                        ))}
                       </div>
                     </div>
                   </div>
+                  {client.comentario && (
+                    <p className="client-review-quote">&ldquo;{client.comentario}&rdquo;</p>
+                  )}
                 </div>
               </motion.div>
             ))}

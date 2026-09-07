@@ -1,35 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, X, FolderPlus } from 'lucide-react';
-import { apiUrl } from '../api';
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
-});
+import { Plus, Trash2, FolderPlus } from 'lucide-react';
+import { adminFetch, adminFetchList } from '../api/adminApi';
+import CrudTable from './components/CrudTable';
+import CrudModal from './components/CrudModal';
+
+type Categoria = { id: number; nombre: string; descripcion: string };
+type Servicio = { id: number; nombre: string; descripcion: string; precio: number; duracion: number | null; categoria_id: number | null; activo: boolean };
+type ServiceForm = { nombre: string; descripcion: string; precio: string; duracion: string; categoria_id: string; activo: boolean };
+type CategoryForm = { nombre: string; descripcion: string };
+
+const emptyServiceForm: ServiceForm = { nombre: '', descripcion: '', precio: '', duracion: '', categoria_id: '', activo: true };
+const emptyCategoryForm: CategoryForm = { nombre: '', descripcion: '' };
 
 const ServiciosAdmin = () => {
-  const [servicios, setServicios] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modals state
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  
-  // Forms state
-  const [editingService, setEditingService] = useState(null);
-  const [serviceForm, setServiceForm] = useState({
-    nombre: '',
-    descripcion: '',
-    precio: '',
-    duracion: '',
-    categoria_id: '',
-    activo: true
-  });
 
-  const [categoryForm, setCategoryForm] = useState({
-    nombre: '',
-    descripcion: ''
-  });
+  const [editingService, setEditingService] = useState<Servicio | null>(null);
+  const [serviceForm, setServiceForm] = useState<ServiceForm>(emptyServiceForm);
+  const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm);
 
   useEffect(() => {
     fetchData();
@@ -38,12 +31,9 @@ const ServiciosAdmin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resS, resC] = await Promise.all([
-        fetch(apiUrl('/servicios'), { headers: getHeaders() }).then(r => r.json()),
-        fetch(apiUrl('/categorias'), { headers: getHeaders() }).then(r => r.json())
-      ]);
-      setServicios(Array.isArray(resS) ? resS : []);
-      setCategorias(Array.isArray(resC) ? resC : []);
+      const [resS, resC] = await Promise.all([adminFetchList<Servicio>('/servicios'), adminFetchList<Categoria>('/categorias')]);
+      setServicios(resS);
+      setCategorias(resC);
     } catch (e) {
       console.error('Error fetching services/categories', e);
     } finally {
@@ -51,55 +41,40 @@ const ServiciosAdmin = () => {
     }
   };
 
-  // Services Actions
   const openCreateService = () => {
     setEditingService(null);
-    setServiceForm({
-      nombre: '',
-      descripcion: '',
-      precio: '',
-      duracion: '',
-      categoria_id: categorias[0]?.id || '',
-      activo: true
-    });
+    setServiceForm({ ...emptyServiceForm, categoria_id: categorias[0] ? String(categorias[0].id) : '' });
     setShowServiceModal(true);
   };
 
-  const openEditService = (s) => {
+  const openEditService = (s: Servicio) => {
     setEditingService(s);
     setServiceForm({
       nombre: s.nombre,
       descripcion: s.descripcion || '',
-      precio: s.precio,
-      duracion: s.duracion || '',
-      categoria_id: s.categoria_id || '',
-      activo: s.activo
+      precio: String(s.precio),
+      duracion: s.duracion ? String(s.duracion) : '',
+      categoria_id: s.categoria_id ? String(s.categoria_id) : '',
+      activo: s.activo,
     });
     setShowServiceModal(true);
   };
 
-  const handleServiceSubmit = async (e) => {
+  const handleServiceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = {
-      ...serviceForm,
+      nombre: serviceForm.nombre,
+      descripcion: serviceForm.descripcion,
       precio: parseFloat(serviceForm.precio),
-      duracion: serviceForm.duracion ? parseInt(serviceForm.duracion) : null,
-      categoria_id: serviceForm.categoria_id ? parseInt(serviceForm.categoria_id) : null
+      duracion: serviceForm.duracion ? parseInt(serviceForm.duracion, 10) : null,
+      categoria_id: serviceForm.categoria_id ? parseInt(serviceForm.categoria_id, 10) : null,
+      activo: serviceForm.activo,
     };
-
     try {
       if (editingService) {
-        await fetch(apiUrl(`/servicios/${editingService.id}`), {
-          method: 'PATCH',
-          headers: getHeaders(),
-          body: JSON.stringify(data)
-        });
+        await adminFetch(`/servicios/${editingService.id}`, { method: 'PATCH', body: JSON.stringify(data) });
       } else {
-        await fetch(apiUrl('/servicios'), {
-          method: 'POST',
-          headers: getHeaders(),
-          body: JSON.stringify(data)
-        });
+        await adminFetch('/servicios', { method: 'POST', body: JSON.stringify(data) });
       }
       setShowServiceModal(false);
       fetchData();
@@ -108,27 +83,21 @@ const ServiciosAdmin = () => {
     }
   };
 
-  const handleServiceDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este servicio?')) {
-      try {
-        await fetch(apiUrl(`/servicios/${id}`), { method: 'DELETE', headers: getHeaders() });
-        fetchData();
-      } catch (e) {
-        console.error(e);
-      }
+  const handleServiceDelete = async (s: Servicio) => {
+    if (!window.confirm('¿Estás seguro de eliminar este servicio?')) return;
+    try {
+      await adminFetch(`/servicios/${s.id}`, { method: 'DELETE' });
+      fetchData();
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  // Categories Actions
-  const handleCategorySubmit = async (e) => {
+  const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch(apiUrl('/categorias'), {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(categoryForm)
-      });
-      setCategoryForm({ nombre: '', descripcion: '' });
+      await adminFetch('/categorias', { method: 'POST', body: JSON.stringify(categoryForm) });
+      setCategoryForm(emptyCategoryForm);
       setShowCategoryModal(false);
       fetchData();
     } catch (e) {
@@ -136,97 +105,69 @@ const ServiciosAdmin = () => {
     }
   };
 
-  const handleCategoryDelete = async (id) => {
-    if (window.confirm('¿Eliminar esta categoría? Esto podría afectar a los servicios asociados.')) {
-      try {
-        await fetch(apiUrl(`/categorias/${id}`), { method: 'DELETE', headers: getHeaders() });
-        fetchData();
-      } catch (e) {
-        console.error(e);
-      }
+  const handleCategoryDelete = async (id: number) => {
+    if (!window.confirm('¿Eliminar esta categoría? Esto podría afectar a los servicios asociados.')) return;
+    try {
+      await adminFetch(`/categorias/${id}`, { method: 'DELETE' });
+      fetchData();
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  const getCategoryName = (catId) => {
-    const cat = categorias.find(c => c.id === catId);
-    return cat ? cat.nombre : 'Sin categoría';
-  };
+  const getCategoryName = (catId: number | null) => categorias.find((c) => c.id === catId)?.nombre || 'Sin categoría';
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: 60, color: '#8a7a6a' }}>Cargando catálogo...</div>;
+    return <div className="admin-state admin-state--page">Cargando catálogo...</div>;
   }
 
   return (
     <div>
       <div className="admin-header-bar">
         <h1>Servicios y Productos</h1>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-secondary" onClick={() => setShowCategoryModal(true)}>
-            <FolderPlus size={16} /> Categorías
-          </button>
-          <button className="btn btn-primary" onClick={openCreateService}>
-            <Plus size={16} /> Nuevo Servicio
-          </button>
+        <div className="header-actions">
+          <button className="btn btn-secondary" onClick={() => setShowCategoryModal(true)}><FolderPlus size={16} /> Categorías</button>
+          <button className="btn btn-primary" onClick={openCreateService}><Plus size={16} /> Nuevo Servicio</button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 20 }}>
-        {/* Tabla de Servicios */}
+      <div className="panel-columns">
         <div className="admin-card">
           <h2>Lista de Servicios</h2>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Precio</th>
-                <th>Duración</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {servicios.map(s => (
-                <tr key={s.id}>
-                  <td>{s.id}</td>
-                  <td>
+          <CrudTable<Servicio>
+            emptyLabel="No hay servicios registrados."
+            items={servicios}
+            onEdit={openEditService}
+            onDelete={handleServiceDelete}
+            columns={[
+              { header: 'ID', render: (s) => s.id },
+              {
+                header: 'Nombre',
+                render: (s) => (
+                  <>
                     <strong>{s.nombre}</strong>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#8a7a6a' }}>{s.descripcion}</p>
-                  </td>
-                  <td>{parseFloat(s.precio).toFixed(2)}</td>
-                  <td>{s.duracion ? `${s.duracion} min` : '—'}</td>
-                  <td><span className="badge badge-success">{getCategoryName(s.categoria_id)}</span></td>
-                  <td>
-                    <span className={`badge ${s.activo ? 'badge-success' : 'badge-danger'}`}>
-                      {s.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="btn btn-edit btn-sm" onClick={() => openEditService(s)}>
-                      <Edit2 size={14} />
-                    </button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleServiceDelete(s.id)} style={{ marginLeft: 6 }}>
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <p className="table-cell-subtitle">{s.descripcion}</p>
+                  </>
+                ),
+              },
+              { header: 'Precio', render: (s) => Number(s.precio).toFixed(2) },
+              { header: 'Duración', render: (s) => (s.duracion ? `${s.duracion} min` : '—') },
+              { header: 'Categoría', render: (s) => <span className="badge badge-success">{getCategoryName(s.categoria_id)}</span> },
+              { header: 'Estado', render: (s) => <span className={`badge ${s.activo ? 'badge-success' : 'badge-danger'}`}>{s.activo ? 'Activo' : 'Inactivo'}</span> },
+            ]}
+          />
         </div>
 
-        {/* Panel lateral de Categorías */}
         <div className="admin-card">
           <h2>Categorías</h2>
-          <div style={{ marginTop: 15 }}>
-            {categorias.map(c => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0ebe5' }}>
+          <div className="mt-15">
+            {categorias.map((c) => (
+              <div key={c.id} className="panel-list-row">
                 <div>
-                  <strong style={{ color: '#2c1a0f', fontSize: 13 }}>{c.nombre}</strong>
-                  <p style={{ margin: '2px 0 0', fontSize: 11, color: '#aaa' }}>{c.descripcion || 'Sin descripción'}</p>
+                  <strong className="panel-list-title">{c.nombre}</strong>
+                  <p className="cell-time">{c.descripcion || 'Sin descripción'}</p>
                 </div>
-                <button className="btn btn-danger btn-sm" onClick={() => handleCategoryDelete(c.id)} style={{ padding: '3px 6px' }}>
+                <button className="btn btn-danger btn-sm btn-xs" onClick={() => handleCategoryDelete(c.id)}>
                   <Trash2 size={12} />
                 </button>
               </div>
@@ -235,92 +176,63 @@ const ServiciosAdmin = () => {
         </div>
       </div>
 
-      {/* Modal Servicio */}
       {showServiceModal && (
-        <div className="modal-overlay" onClick={() => setShowServiceModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2>{editingService ? 'Editar Servicio' : 'Nuevo Servicio'}</h2>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowServiceModal(false)}>
-                <X size={16} />
-              </button>
-            </div>
-            <form onSubmit={handleServiceSubmit}>
-              <div className="form-group">
-                <label>Nombre</label>
-                <input className="form-control" value={serviceForm.nombre} onChange={e => setServiceForm({ ...serviceForm, nombre: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Descripción</label>
-                <textarea className="form-control" rows={3} value={serviceForm.descripcion} onChange={e => setServiceForm({ ...serviceForm, descripcion: e.target.value })} />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Precio ($)</label>
-                  <input className="form-control" type="number" step="0.01" value={serviceForm.precio} onChange={e => setServiceForm({ ...serviceForm, precio: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label>Duración (minutos)</label>
-                  <input className="form-control" type="number" value={serviceForm.duracion} onChange={e => setServiceForm({ ...serviceForm, duracion: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Categoría</label>
-                  <select className="form-control" value={serviceForm.categoria_id} onChange={e => setServiceForm({ ...serviceForm, categoria_id: e.target.value })} required>
-                    <option value="" disabled>Selecciona una categoría</option>
-                    {categorias.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', marginTop: 25 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={serviceForm.activo} onChange={e => setServiceForm({ ...serviceForm, activo: e.target.checked })} />
-                    ¿Activo / Disponible?
-                  </label>
-                </div>
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowServiceModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">{editingService ? 'Guardar Cambios' : 'Crear Servicio'}</button>
-              </div>
-            </form>
+        <CrudModal
+          title={editingService ? 'Editar Servicio' : 'Nuevo Servicio'}
+          onClose={() => setShowServiceModal(false)}
+          onSubmit={handleServiceSubmit}
+          submitLabel={editingService ? 'Guardar Cambios' : 'Crear Servicio'}
+        >
+          <div className="form-group">
+            <label>Nombre</label>
+            <input className="form-control" value={serviceForm.nombre} onChange={(e) => setServiceForm({ ...serviceForm, nombre: e.target.value })} required />
           </div>
-        </div>
+          <div className="form-group">
+            <label>Descripción</label>
+            <textarea className="form-control" rows={3} value={serviceForm.descripcion} onChange={(e) => setServiceForm({ ...serviceForm, descripcion: e.target.value })} />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Precio ($)</label>
+              <input className="form-control" type="number" step="0.01" value={serviceForm.precio} onChange={(e) => setServiceForm({ ...serviceForm, precio: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label>Duración (minutos)</label>
+              <input className="form-control" type="number" value={serviceForm.duracion} onChange={(e) => setServiceForm({ ...serviceForm, duracion: e.target.value })} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Categoría</label>
+              <select className="form-control" value={serviceForm.categoria_id} onChange={(e) => setServiceForm({ ...serviceForm, categoria_id: e.target.value })} required>
+                <option value="" disabled>Selecciona una categoría</option>
+                {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div className="form-group checkbox-field">
+              <label>
+                <input type="checkbox" checked={serviceForm.activo} onChange={(e) => setServiceForm({ ...serviceForm, activo: e.target.checked })} />
+                ¿Activo / Disponible?
+              </label>
+            </div>
+          </div>
+        </CrudModal>
       )}
 
-      {/* Modal Categoría */}
       {showCategoryModal && (
-        <div className="modal-overlay" onClick={() => setShowCategoryModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2>Nueva Categoría</h2>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowCategoryModal(false)}>
-                <X size={16} />
-              </button>
-            </div>
-            <form onSubmit={handleCategorySubmit}>
-              <div className="form-group">
-                <label>Nombre de Categoría</label>
-                <input className="form-control" value={categoryForm.nombre} onChange={e => setCategoryForm({ ...categoryForm, nombre: e.target.value })} required placeholder="Ej: Especialidades, Entradas..." />
-              </div>
-              <div className="form-group">
-                <label>Descripción</label>
-                <textarea className="form-control" rows={2} value={categoryForm.descripcion} onChange={e => setCategoryForm({ ...categoryForm, descripcion: e.target.value })} />
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Crear Categoría</button>
-              </div>
-            </form>
+        <CrudModal title="Nueva Categoría" onClose={() => setShowCategoryModal(false)} onSubmit={handleCategorySubmit} submitLabel="Crear Categoría">
+          <div className="form-group">
+            <label>Nombre de Categoría</label>
+            <input className="form-control" value={categoryForm.nombre} onChange={(e) => setCategoryForm({ ...categoryForm, nombre: e.target.value })} required placeholder="Ej: Especialidades, Entradas..." />
           </div>
-        </div>
+          <div className="form-group">
+            <label>Descripción</label>
+            <textarea className="form-control" rows={2} value={categoryForm.descripcion} onChange={(e) => setCategoryForm({ ...categoryForm, descripcion: e.target.value })} />
+          </div>
+        </CrudModal>
       )}
     </div>
   );
 };
 
 export default ServiciosAdmin;
-
-

@@ -4,13 +4,13 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCE8V6B8xBc8DO98TpZxSGefLulU5b7tyM",
-  authDomain: "huarmy-coffee.firebaseapp.com",
-  projectId: "huarmy-coffee",
-  storageBucket: "huarmy-coffee.firebasestorage.app",
-  messagingSenderId: "737736170425",
-  appId: "1:737736170425:web:386cd10decc089c8c57468",
-  measurementId: "G-50XLTBE0BS",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
 export const app = initializeApp(firebaseConfig);

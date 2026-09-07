@@ -56,51 +56,19 @@ const Contact = () => {
     <section id="contact" className="contact-section">
       {/* Floating WhatsApp Button — redirige directo a WhatsApp */}
       {createPortal(
-        <div
-          className="whatsapp-float-container"
-          style={{ position: 'fixed', bottom: 30, right: 24, zIndex: 10000 }}
-        >
-        {/* Pulse ring animation */}
-        <span style={{
-          position: 'absolute', inset: -6, borderRadius: 999,
-          background: 'rgba(37,211,102,0.25)',
-          animation: 'waPulse 2s ease-out infinite',
-          pointerEvents: 'none'
-        }} />
-        <style>{`
-          @keyframes waPulse {
-            0%   { transform: scale(1);   opacity: 0.7; }
-            70%  { transform: scale(1.5); opacity: 0; }
-            100% { transform: scale(1.5); opacity: 0; }
-          }
-          .whatsapp-floating-button {
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-          }
-          .whatsapp-floating-button:hover {
-            transform: scale(1.06) translateY(-2px);
-            box-shadow: 0 8px 24px rgba(37,211,102,0.5) !important;
-          }
-          .whatsapp-floating-button:active { transform: scale(0.97); }
-        `}</style>
-        <a
-          href={defaultWhatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t("contact_chatear_whatsapp")}
-          className="whatsapp-floating-button"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '11px 20px', borderRadius: 999,
-            background: 'linear-gradient(135deg, #25d366 0%, #128c45 100%)',
-            color: 'white', textDecoration: 'none', cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(37,211,102,0.45)',
-            fontWeight: 700, fontSize: 14, letterSpacing: 0.3,
-            position: 'relative', zIndex: 1
-          }}
-        >
-          <MessageCircle size={20} />
-          <span>WhatsApp</span>
-        </a>
+        <div className="whatsapp-float-container">
+          {/* Pulse ring animation */}
+          <span className="whatsapp-pulse-ring" />
+          <a
+            href={defaultWhatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("contact_chatear_whatsapp")}
+            className="whatsapp-floating-button"
+          >
+            <MessageCircle size={20} />
+            <span>WhatsApp</span>
+          </a>
         </div>,
         document.body
       )}

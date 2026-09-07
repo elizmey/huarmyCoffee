@@ -1,15 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { Check, X, Briefcase, Inbox } from 'lucide-react';
+import { Check, X, Briefcase } from 'lucide-react';
+import { adminFetch, adminFetchList } from '../api/adminApi';
+import CrudTable from './components/CrudTable';
 
-import { apiUrl } from '../api';
+type Postulacion = { id: number; nombre: string; correo: string; telefono: string; mensaje: string; estado: string; fecha: string | null; created_at: string };
 
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
-});
+const estadoBadge = (estado: string) => {
+  switch (estado) {
+    case 'aprobada':
+      return <span className="badge badge-success">Aprobada</span>;
+    case 'rechazada':
+      return <span className="badge badge-danger">Rechazada</span>;
+    default:
+      return <span className="badge badge-warning">Pendiente</span>;
+  }
+};
 
 const Postulaciones = () => {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<Postulacion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchItems(); }, []);
@@ -17,99 +25,65 @@ const Postulaciones = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/postulaciones'), { headers: getHeaders() });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(await adminFetchList<Postulacion>('/postulaciones'));
     } catch (e) {
       console.error(e);
+      setItems([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateEstado = async (id, estado) => {
+  const updateEstado = async (id: number, estado: string) => {
     try {
-      await fetch(apiUrl(`/postulaciones/${id}`), { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ estado }) });
+      await adminFetch(`/postulaciones/${id}`, { method: 'PATCH', body: JSON.stringify({ estado }) });
     } catch (e) {
       console.error(e);
     }
     fetchItems();
   };
 
-  const deleteItem = async (id) => {
-    if (window.confirm('¿Eliminar esta postulación?')) {
-      try {
-        await fetch(apiUrl(`/postulaciones/${id}`), { method: 'DELETE', headers: getHeaders() });
-      } catch (e) {
-        console.error(e);
-      }
-      fetchItems();
+  const deleteItem = async (id: number) => {
+    if (!window.confirm('¿Eliminar esta postulación?')) return;
+    try {
+      await adminFetch(`/postulaciones/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      console.error(e);
     }
-  };
-
-  const estadoBadge = (estado) => {
-    switch (estado) {
-      case 'aprobada':
-        return <span className="badge badge-success">Aprobada</span>;
-      case 'rechazada':
-        return <span className="badge badge-danger">Rechazada</span>;
-      default:
-        return <span className="badge badge-warning">Pendiente</span>;
-    }
+    fetchItems();
   };
 
   return (
     <div>
-      <div className="admin-header-bar">
-        <h1>Postulaciones</h1>
-      </div>
+      <div className="admin-header-bar"><h1>Postulaciones</h1></div>
       <div className="admin-card">
-        <h2><Briefcase size={18} style={{ marginRight: 8, color: '#d4a373' }} />Solicitudes de Empleo</h2>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#8a7a6a' }}>Cargando postulaciones...</div>
-        ) : items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#ccc' }}>
-            <Inbox size={48} style={{ opacity: 0.3, marginBottom: 10 }} />
-            <p>No hay postulaciones recibidas.</p>
-          </div>
-        ) : (
-          <table className="admin-table" style={{ marginTop: 15 }}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Mensaje</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(item => (
-                <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td><strong>{item.nombre}</strong></td>
-                  <td>{item.correo}</td>
-                  <td>{item.telefono}</td>
-                  <td style={{ maxWidth: 280, fontSize: 12, color: '#5a4a3a' }}>{item.mensaje}</td>
-                  <td>{item.fecha ? new Date(item.fecha).toLocaleDateString() : new Date(item.created_at).toLocaleDateString()}</td>
-                  <td>{estadoBadge(item.estado)}</td>
-                  <td>
-                    {item.estado !== 'aprobada' && (
-                      <button className="btn btn-success btn-sm" onClick={() => updateEstado(item.id, 'aprobada')} title="Aprobar postulación"><Check size={14} /></button>
-                    )}
-                    {item.estado !== 'rechazada' && (
-                      <button className="btn btn-secondary btn-sm" onClick={() => updateEstado(item.id, 'rechazada')} title="Rechazar postulación" style={{ marginLeft: 6 }}><X size={14} /></button>
-                    )}
-                    <button className="btn btn-danger btn-sm" onClick={() => deleteItem(item.id)} title="Eliminar postulación" style={{ marginLeft: 6 }}><X size={14} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <h2><Briefcase size={18} className="inline-icon" />Solicitudes de Empleo</h2>
+        <CrudTable<Postulacion>
+          loading={loading}
+          loadingLabel="Cargando postulaciones..."
+          emptyLabel="No hay postulaciones recibidas."
+          items={items}
+          columns={[
+            { header: 'ID', render: (i) => i.id },
+            { header: 'Nombre', render: (i) => <strong>{i.nombre}</strong> },
+            { header: 'Correo', render: (i) => i.correo },
+            { header: 'Teléfono', render: (i) => i.telefono },
+            { header: 'Mensaje', render: (i) => i.mensaje, className: 'table-cell-truncate table-cell-truncate--sm text-sm text-dark-muted' },
+            { header: 'Fecha', render: (i) => new Date(i.fecha || i.created_at).toLocaleDateString() },
+            { header: 'Estado', render: (i) => estadoBadge(i.estado) },
+          ]}
+          renderActions={(item) => (
+            <span className="row-actions">
+              {item.estado !== 'aprobada' && (
+                <button className="btn btn-success btn-sm" onClick={() => updateEstado(item.id, 'aprobada')} title="Aprobar postulación"><Check size={14} /></button>
+              )}
+              {item.estado !== 'rechazada' && (
+                <button className="btn btn-secondary btn-sm" onClick={() => updateEstado(item.id, 'rechazada')} title="Rechazar postulación"><X size={14} /></button>
+              )}
+              <button className="btn btn-danger btn-sm" onClick={() => deleteItem(item.id)} title="Eliminar postulación"><X size={14} /></button>
+            </span>
+          )}
+        />
       </div>
     </div>
   );

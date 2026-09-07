@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Truck, Store, UserCircle, Package, Building2, LogOut, Coffee, CalendarRange, Image, Menu, X, ShieldCheck, Handshake, MessageSquare, BarChart3, Settings, Tag, FileText } from 'lucide-react';
 import { logoutAdmin } from '../services/authService';
+import { getStoredAdminUser } from '../api/adminApi';
 import './admin.css';
 
 const navItems = [
@@ -29,7 +30,7 @@ const navItems = [
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const token = localStorage.getItem('adminToken');
-  const user = JSON.parse(localStorage.getItem('adminUser') || '{}');
+  const user = getStoredAdminUser();
   const location = useLocation();
 
   if (!token && location.pathname !== '/admin/login') {
@@ -66,9 +67,9 @@ const AdminLayout = () => {
           >
             <X size={20} />
           </button>
-          <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #d4a373', marginBottom: 8 }} />
+          <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" className="sidebar-logo" />
           <h2>Huarmy Admin</h2>
-          <p style={{ fontSize: 11, opacity: 0.6 }}>{user.rol}</p>
+          <p className="sidebar-role">{user?.rol}</p>
         </div>
         <nav className="admin-sidebar-nav">
           {navItems.map((item) => (
@@ -79,7 +80,7 @@ const AdminLayout = () => {
               {item.label}
             </NavLink>
           ))}
-          <button className="admin-nav-item logout" onClick={handleLogout} style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '14px', fontFamily: 'inherit' }}>
+          <button className="admin-nav-item logout" onClick={handleLogout}>
             <LogOut size={18} />
             Cerrar Sesión
           </button>

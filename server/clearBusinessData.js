@@ -2,42 +2,20 @@
  * Elimina datos de negocio de la base. Conserva solo usuarios admin y recepcionista.
  * Uso: npm run db:clear
  */
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
-
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  database: process.env.DB_NAME || 'huarmy_db',
-  user: process.env.DB_USER || 'huarmy_user',
-  password: process.env.DB_PASSWORD || 'HuarmyPassword2026',
-});
-
-async function ensureCoreUsers(client) {
-  const adminHash = bcrypt.hashSync('admin123', 10);
-  const recepHash = bcrypt.hashSync('recepcionista123', 10);
-  await client.query(
-    `INSERT INTO usuarios (nombre, email, password, rol, sucursal_id, activo) VALUES
-      ('Administrador', 'admin@huarmycoffee.com', $1, 'admin', NULL, true),
-      ('Recepcionista', 'recepcionista@huarmycoffee.com', $2, 'recepcionista', NULL, true)
-    ON CONFLICT (email) DO UPDATE SET
-      nombre = EXCLUDED.nombre,
-      password = EXCLUDED.password,
-      rol = EXCLUDED.rol,
-      sucursal_id = EXCLUDED.sucursal_id,
-      activo = EXCLUDED.activo`,
-    [adminHash, recepHash]
-  );
-}
+const pool = require('./db');
+const { ensureCoreUsers } = require('./seedCoreUsers');
+const { requireEnv } = require('./env');
 
 async function clearBusinessData() {
   const client = await pool.connect();
   try {
     const initSQL = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf8');
     await client.query(initSQL);
+
+    const adminEmail = requireEnv('SEED_ADMIN_EMAIL');
+    const recepEmail = requireEnv('SEED_RECEPCIONISTA_EMAIL');
 
     await client.query('BEGIN');
     await client.query('DELETE FROM citas');
@@ -56,9 +34,7 @@ async function clearBusinessData() {
     await client.query('DELETE FROM configuracion');
     await client.query('UPDATE usuarios SET sucursal_id = NULL');
     await client.query('DELETE FROM sucursales');
-    await client.query(
-      `DELETE FROM usuarios WHERE email NOT IN ('admin@huarmycoffee.com', 'recepcionista@huarmycoffee.com')`
-    );
+    await client.query('DELETE FROM usuarios WHERE email NOT IN ($1, $2)', [adminEmail, recepEmail]);
     await client.query('COMMIT');
 
     await ensureCoreUsers(client);
