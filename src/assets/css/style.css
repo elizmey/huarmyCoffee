@@ -2212,6 +2212,7 @@ header {
 }
 
 .form-input,
+.form-select,
 .form-textarea {
   width: 100%;
   padding: 13px 16px;
@@ -2228,7 +2229,27 @@ header {
   color: rgba(245, 232, 211, 0.55);
 }
 
+.form-select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.form-status-ok,
+.form-status-error {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-status-ok { color: #8ee0a8; }
+.form-status-error { color: #f3b4a8; }
+
+.btn-submit-secondary {
+  margin-top: 10px;
+}
+
 .form-input:focus,
+.form-select:focus,
 .form-textarea:focus {
   outline: none;
   border-color: rgba(212, 163, 115, 0.7);

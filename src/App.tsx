@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Menu as MenuIcon, X, Home as HomeIcon } from 'lucide-react';
 import './App.css';
 
@@ -21,43 +21,24 @@ import Clientes from './admin/Clientes';
 import Proveedores from './admin/Proveedores';
 import Socios from './admin/Socios';
 import Sucursales from './admin/Sucursales';
-import Personal from './admin/Personal';
 import Inventarios from './admin/Inventarios';
 import Capacidad from './admin/Capacidad';
 import Comunicacion from './admin/Comunicacion';
 import Scorecard from './admin/Scorecard';
-import ServiciosAdmin from './admin/Servicios';
+import Catalogo from './admin/Catalogo';
 import Citas from './admin/Citas';
-import Postulaciones from './admin/Postulaciones';
-import GaleriaAdmin from './admin/GaleriaAdmin';
-import Configuracion from './admin/Configuracion';
-import PromocionesAdmin from './admin/PromocionesAdmin';
+import Pedidos from './admin/Pedidos';
 import Usuarios from './admin/Usuarios';
+import ForgotPassword from './admin/ForgotPassword';
+import ResetPassword from './admin/ResetPassword';
 
 import Portal from './portal/Portal';
-import Trabaja from './components/Trabaja';
 import AccessibilityWidget from './components/AccessibilityWidget';
 import { useTranslation } from './i18n';
-import { apiUrl } from './api';
 
 function PublicSite() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
-  const [mostrarTrabaja, setMostrarTrabaja] = useState(true);
-
-  useEffect(() => {
-    fetch(apiUrl('/public/configuracion'))
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const item = data.find(c => c.clave === 'mostrar_trabaja');
-          if (item) {
-            setMostrarTrabaja(item.valor === 'true');
-          }
-        }
-      })
-      .catch(err => console.warn('Error fetching config for mostrar_trabaja', err));
-  }, []);
 
   useEffect(() => {
     if (!mobileMenuOpen) return undefined;
@@ -76,7 +57,6 @@ function PublicSite() {
     { id: 'cotizador', label: t('cotizador_nav') },
     { id: 'ubicacion', label: t('ubicacion') },
     { id: 'contact', label: t('contacto') },
-    ...(mostrarTrabaja ? [{ id: 'work', label: t('trabaja') }] : []),
     { id: 'portal', label: t('portal'), href: '/portal' },
     { id: 'admin', icon: HomeIcon, label: t('admin'), href: '/admin/login' },
   ];
@@ -126,7 +106,7 @@ function PublicSite() {
       <div id="site-content">
         <div className="site-content-spacer" />
         <main id="main-content">
-          <Home /><Menu /><Promociones /><Nosotros /><Servicios /><Cotizador /><Testimonials /><Gallery /><Ubicacion /><Contact />{mostrarTrabaja && <Trabaja />}
+          <Home /><Menu /><Promociones /><Nosotros /><Servicios /><Cotizador /><Testimonials /><Gallery /><Ubicacion /><Contact />
         </main>
 
         <footer className="site-footer">
@@ -145,23 +125,26 @@ function App() {
     return (
       <Routes>
         <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/reset-password" element={<ResetPassword />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="servicios" element={<ServiciosAdmin />} />
+          <Route path="menu" element={<Catalogo />} />
+          <Route path="servicios" element={<Navigate to="/admin/menu" replace />} />
+          <Route path="galeria" element={<Navigate to="/admin/menu" replace />} />
+          <Route path="promociones" element={<Navigate to="/admin/menu" replace />} />
+          <Route path="roles" element={<Navigate to="/admin" replace />} />
           <Route path="citas" element={<Citas />} />
-          <Route path="postulaciones" element={<Postulaciones />} />
-          <Route path="galeria" element={<GaleriaAdmin />} />
+          <Route path="pedidos" element={<Pedidos />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="proveedores" element={<Proveedores />} />
           <Route path="socios" element={<Socios />} />
           <Route path="sucursales" element={<Sucursales />} />
-          <Route path="personal" element={<Personal />} />
+          <Route path="personal" element={<Navigate to="/admin/usuarios" replace />} />
           <Route path="inventarios" element={<Inventarios />} />
           <Route path="capacidad" element={<Capacidad />} />
           <Route path="comunicacion" element={<Comunicacion />} />
           <Route path="scorecard" element={<Scorecard />} />
-          <Route path="configuracion" element={<Configuracion />} />
-          <Route path="promociones" element={<PromocionesAdmin />} />
           <Route path="usuarios" element={<Usuarios />} />
         </Route>
       </Routes>

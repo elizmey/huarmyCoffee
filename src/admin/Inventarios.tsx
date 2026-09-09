@@ -64,7 +64,7 @@ const Inventarios = () => {
             {
               header: 'Estado',
               render: (i) => {
-                const bajoStock = i.cantidad <= i.stock_minimo;
+                const bajoStock = Number(i.cantidad) <= Math.max(Number(i.stock_minimo) || 0, 3);
                 return <span className={`badge ${bajoStock ? 'badge-danger' : 'badge-success'}`}>{bajoStock ? 'Stock Bajo' : 'OK'}</span>;
               },
             },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, Plus } from 'lucide-react';
 import { adminFetch, adminFetchList } from '../api/adminApi';
 import CrudTable from './components/CrudTable';
 
@@ -7,6 +7,8 @@ type Cliente = { id: number; nombre: string; telefono: string; email: string };
 type Sucursal = { id: number; nombre: string };
 type Servicio = { id: number; nombre: string };
 type Cita = { id: number; cliente_id: number; sucursal_id: number; servicio_id: number; fecha_hora: string; estado: string };
+
+const emptyForm = { cliente_id: '', sucursal_id: '', servicio_id: '', fecha_hora: '' };
 
 const getStatusBadge = (estado: string) => {
   switch (estado) {
@@ -27,10 +29,10 @@ const Citas = () => {
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -62,13 +64,37 @@ const Citas = () => {
       await adminFetch(`/citas/${id}`, { method: 'PATCH', body: JSON.stringify({ estado }) });
       fetchData();
     } catch (e) {
-      console.error(e);
+      alert((e as Error).message);
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await adminFetch('/citas', {
+        method: 'POST',
+        body: JSON.stringify({
+          cliente_id: parseInt(form.cliente_id, 10),
+          sucursal_id: parseInt(form.sucursal_id, 10),
+          servicio_id: parseInt(form.servicio_id, 10),
+          fecha_hora: form.fecha_hora,
+          estado: 'pendiente',
+        }),
+      });
+      setShowModal(false);
+      setForm(emptyForm);
+      fetchData();
+    } catch (err) {
+      alert((err as Error).message);
     }
   };
 
   return (
     <div>
-      <div className="admin-header-bar"><h1>Reservas y Citas</h1></div>
+      <div className="admin-header-bar">
+        <h1>Reservas y Citas</h1>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={16} /> Nueva cita</button>
+      </div>
       <div className="admin-card">
         <h2>Gestión de Citas Empresariales</h2>
         <CrudTable<Cita>
@@ -114,6 +140,40 @@ const Citas = () => {
           }}
         />
       </div>
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Nueva cita</h2>
+            <form onSubmit={handleCreate}>
+              <div className="form-group"><label>Cliente</label>
+                <select className="form-control" value={form.cliente_id} onChange={(e) => setForm({ ...form, cliente_id: e.target.value })} required>
+                  <option value="">Selecciona</option>
+                  {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Sucursal</label>
+                <select className="form-control" value={form.sucursal_id} onChange={(e) => setForm({ ...form, sucursal_id: e.target.value })} required>
+                  <option value="">Selecciona</option>
+                  {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Servicio</label>
+                <select className="form-control" value={form.servicio_id} onChange={(e) => setForm({ ...form, servicio_id: e.target.value })} required>
+                  <option value="">Selecciona</option>
+                  {servicios.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Fecha y hora</label>
+                <input className="form-control" type="datetime-local" value={form.fecha_hora} onChange={(e) => setForm({ ...form, fecha_hora: e.target.value })} required />
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary">Crear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

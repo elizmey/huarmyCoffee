@@ -4,6 +4,7 @@ import { Target, Eye, Coffee, MapPin, Phone, ChevronRight, ArrowLeft, Shield } f
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../api';
 import { useTranslation } from '../i18n';
+import { loginAdmin, logoutAdmin } from '../services/authService';
 import './Portal.css';
 
 const defaultMision = 'Ofrecer una experiencia gastronómica auténtica que rescata los sabores tradicionales ecuatorianos, brindando a nuestros clientes calidad, calidez y un ambiente acogedor en cada una de nuestras sucursales.';
@@ -14,6 +15,11 @@ const Portal = () => {
   const [vision, setVision] = useState(defaultVision);
   const [servicios, setServicios] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  const [user, setUser] = useState(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -36,7 +42,26 @@ const Portal = () => {
       }
     };
     fetchData();
+    const stored = localStorage.getItem('adminUser');
+    if (stored && localStorage.getItem('adminToken')) {
+      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
+    }
   }, []);
+
+  const handlePortalLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoginLoading(true);
+    try {
+      const logged = await loginAdmin(loginEmail, loginPassword);
+      setUser(logged);
+      setLoginPassword('');
+    } catch (err) {
+      setLoginError((err as Error).message || 'No se pudo iniciar sesión');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   return (
     <div className="portal-page">
@@ -53,8 +78,11 @@ const Portal = () => {
           <a href="/" className="portal-link-btn">
             <ArrowLeft size={14} /> {t('portal_public_site')}
           </a>
-          <button onClick={() => navigate('/admin/login')} className="portal-admin-btn">
-            <Shield size={14} /> {t('portal_admin_access')}
+          <button
+            onClick={() => user ? navigate('/admin') : document.getElementById('portal-login')?.scrollIntoView({ behavior: 'smooth' })}
+            className="portal-admin-btn"
+          >
+            <Shield size={14} /> {user ? t('portal_go_admin') : t('portal_login')}
           </button>
         </div>
       </header>
@@ -93,6 +121,37 @@ const Portal = () => {
             </div>
             <p className="portal-mission-text">{vision}</p>
           </motion.div>
+        </div>
+      </section>
+
+      <section id="portal-login" style={{ padding: 'clamp(40px, 6vw, 80px) clamp(20px, 5vw, 60px)', background: 'white' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', background: '#fdfaf7', padding: 28, borderRadius: 16, border: '1px solid #e8e0d8' }}>
+          <h2 style={{ color: '#2c1a0f', marginTop: 0 }}>{t('portal_login_title')}</h2>
+          {user ? (
+            <div>
+              <p style={{ color: '#5a4a3a' }}>{t('portal_welcome')} <strong>{user.nombre}</strong> ({user.rol}).</p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" onClick={() => navigate('/admin')} style={{ padding: '10px 18px', background: '#d4a373', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{t('portal_go_admin')}</button>
+                <button onClick={async () => { await logoutAdmin(); setUser(null); }} style={{ padding: '10px 18px', borderRadius: 8, cursor: 'pointer' }}>{t('portal_logout')}</button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handlePortalLogin}>
+              {loginError && <p style={{ color: '#c0392b' }}>{loginError}</p>}
+              <div className="form-group" style={{ marginBottom: 12 }}>
+                <label>{t('portal_email')}</label>
+                <input className="form-control" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #e8e0d8' }} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 12 }}>
+                <label>{t('portal_password')}</label>
+                <input className="form-control" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #e8e0d8' }} />
+              </div>
+              <button type="submit" disabled={loginLoading} style={{ padding: '10px 18px', background: '#d4a373', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
+                {loginLoading ? '...' : t('portal_login_btn')}
+              </button>
+              <p style={{ marginTop: 12, fontSize: 13 }}><a href="/admin/forgot-password">{t('portal_forgot')}</a></p>
+            </form>
+          )}
         </div>
       </section>
 

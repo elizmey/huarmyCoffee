@@ -85,6 +85,38 @@
   min-height: 100vh;
 }
 
+.catalog-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: -10px 0 28px;
+}
+
+.catalog-jump button {
+  background: #fff;
+  border: 1px solid #d4a373;
+  color: #2c1a0f;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalog-jump button:hover,
+.catalog-jump button.active {
+  background: #d4a373;
+}
+
+.catalog-panel .admin-header-bar {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+}
+
+.catalog-panel .admin-header-bar h1 {
+  font-size: 20px;
+}
+
 .admin-header-bar {
   display: flex;
   justify-content: space-between;
@@ -176,6 +208,15 @@
 
 .btn-primary:hover {
   background: #c49262;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #1e8449;
 }
 
 .btn-danger {
@@ -1044,5 +1085,54 @@ select.form-control {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+.gantt-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.gantt-label {
+  font-size: 12px;
+  color: #2c1a0f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-track {
+  position: relative;
+  height: 22px;
+  background: #f4f0eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.gantt-bar {
+  position: absolute;
+  top: 2px;
+  height: 18px;
+  border-radius: 4px;
+  background: #d4a373;
+  color: #2c1a0f;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+}
+
+.gantt-bar.critica {
+  background: #c0392b;
+  color: #fff;
 }
 

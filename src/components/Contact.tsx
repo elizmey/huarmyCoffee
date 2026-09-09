@@ -6,10 +6,22 @@ import "../assets/css/style.css";
 import { apiUrl } from "../api";
 import { useTranslation } from "../i18n";
 
+type Branch = { id: number; nombre: string };
+type Service = { id: number; nombre: string };
+
 const Contact = () => {
   const { t } = useTranslation();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [sucursalId, setSucursalId] = useState("");
+  const [servicioId, setServicioId] = useState("");
+  const [fechaHora, setFechaHora] = useState("");
+  const [sucursales, setSucursales] = useState<Branch[]>([]);
+  const [servicios, setServicios] = useState<Service[]>([]);
+  const [status, setStatus] = useState({ type: "", text: "" });
+  const [submitting, setSubmitting] = useState(false);
   const [settings, setSettings] = useState({
     sitio_nombre: "Huarmy Coffee",
     email_contacto: "huarmycoffee@gmail.com",
@@ -21,17 +33,34 @@ const Contact = () => {
   });
 
   useEffect(() => {
-    // Fetch Settings
     fetch(apiUrl("/public/configuracion"))
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const s = {};
-          data.forEach(item => { s[item.clave] = item.valor; });
+          const s: Record<string, string> = {};
+          data.forEach((item: { clave: string; valor: string }) => { s[item.clave] = item.valor; });
           setSettings(prev => ({ ...prev, ...s }));
         }
       })
       .catch(err => console.warn("Usando configuraciones locales.", err));
+
+    Promise.all([
+      fetch(apiUrl("/public/sucursales")).then(r => r.ok ? r.json() : []),
+      fetch(apiUrl("/public/servicios")).then(r => r.ok ? r.json() : []),
+    ]).then(([branches, services]) => {
+      setSucursales(Array.isArray(branches) ? branches : []);
+      setServicios(Array.isArray(services) ? services : []);
+    }).catch(() => {
+      setSucursales([]);
+      setServicios([]);
+    });
+  }, []);
+
+  const canBook = sucursales.length > 0 && servicios.length > 0;
+  const minFecha = useMemo(() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
   }, []);
 
   const contactInfo = [
@@ -43,21 +72,63 @@ const Contact = () => {
   ];
 
   const baseText = useMemo(() => {
+    const sucursal = sucursales.find((s) => String(s.id) === sucursalId);
+    const servicio = servicios.find((s) => String(s.id) === servicioId);
     return [
       t("contact_whatsapp_intro"),
       name ? `${t("contact_whatsapp_nombre")} ${name}` : null,
+      email ? `${t("contact_email")}: ${email}` : null,
+      phone ? `${t("contact_telefono")}: ${phone}` : null,
+      sucursal ? `${t("contact_sucursal")}: ${sucursal.nombre}` : null,
+      servicio ? `${t("contact_servicio")}: ${servicio.nombre}` : null,
+      fechaHora ? `${t("contact_fecha")}: ${fechaHora.replace('T', ' ')}` : null,
       message ? `${t("contact_whatsapp_mensaje")} ${message}` : null,
     ].filter(Boolean).join("\n");
-  }, [t, name, message]);
+  }, [t, name, email, phone, message, sucursalId, servicioId, fechaHora, sucursales, servicios]);
 
   const defaultWhatsappUrl = `https://wa.me/${settings.whatsapp_matriz}?text=${encodeURIComponent(baseText)}`;
 
+  const openWhatsApp = () => {
+    window.open(defaultWhatsappUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canBook) {
+      openWhatsApp();
+      return;
+    }
+    setStatus({ type: "", text: "" });
+    setSubmitting(true);
+    try {
+      const res = await fetch(apiUrl("/public/citas"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: name.trim(),
+          email: email.trim(),
+          telefono: phone.trim() || null,
+          sucursal_id: parseInt(sucursalId, 10),
+          servicio_id: parseInt(servicioId, 10),
+          fecha_hora: fechaHora,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || t("contact_reserva_error"));
+      setStatus({ type: "ok", text: t("contact_reserva_ok") });
+      setMessage("");
+      setFechaHora("");
+    } catch (err) {
+      setStatus({ type: "error", text: (err as Error).message || t("contact_reserva_error") });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="contact-section">
-      {/* Floating WhatsApp Button — redirige directo a WhatsApp */}
       {createPortal(
         <div className="whatsapp-float-container">
-          {/* Pulse ring animation */}
           <span className="whatsapp-pulse-ring" />
           <a
             href={defaultWhatsappUrl}
@@ -75,7 +146,6 @@ const Contact = () => {
 
       <div className="container">
         <div className="grid-2-cols">
-          {/* Izquierda - Información */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -132,35 +202,106 @@ const Contact = () => {
             </div>
           </motion.div>
 
-          {/* Derecha - Formulario WhatsApp */}
           <motion.form
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: false }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="form-card"
-            onSubmit={(event) => {
-              event.preventDefault();
-              window.open(defaultWhatsappUrl, "_blank", "noopener,noreferrer");
-            }}
+            onSubmit={handleSubmit}
           >
-            <h3 className="form-title">{t("contact_envianos_mensaje")}</h3>
+            <h3 className="form-title">{canBook ? t("contact_reservar_titulo") : t("contact_envianos_mensaje")}</h3>
 
             <div className="form-group">
-              <label className="form-label">{t("contact_nombre")}</label>
+              <label className="form-label" htmlFor="contact-name">{t("contact_nombre")}</label>
               <input
+                id="contact-name"
                 type="text"
                 placeholder={t("contact_placeholder_nombre")}
                 className="form-input"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t("contact_mensaje")}</label>
+              <label className="form-label" htmlFor="contact-email">{t("contact_email")}</label>
+              <input
+                id="contact-email"
+                type="email"
+                placeholder={t("contact_placeholder_email")}
+                className="form-input"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required={canBook}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="contact-phone">{t("contact_telefono")}</label>
+              <input
+                id="contact-phone"
+                type="tel"
+                placeholder={t("contact_placeholder_telefono")}
+                className="form-input"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+              />
+            </div>
+
+            {canBook && (
+              <>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="contact-sucursal">{t("contact_sucursal")}</label>
+                  <select
+                    id="contact-sucursal"
+                    className="form-input form-select"
+                    value={sucursalId}
+                    onChange={(event) => setSucursalId(event.target.value)}
+                    required
+                  >
+                    <option value="">{t("contact_elige")}</option>
+                    {sucursales.map((item) => (
+                      <option key={item.id} value={item.id}>{item.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="contact-servicio">{t("contact_servicio")}</label>
+                  <select
+                    id="contact-servicio"
+                    className="form-input form-select"
+                    value={servicioId}
+                    onChange={(event) => setServicioId(event.target.value)}
+                    required
+                  >
+                    <option value="">{t("contact_elige")}</option>
+                    {servicios.map((item) => (
+                      <option key={item.id} value={item.id}>{item.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="contact-fecha">{t("contact_fecha")}</label>
+                  <input
+                    id="contact-fecha"
+                    type="datetime-local"
+                    className="form-input"
+                    value={fechaHora}
+                    min={minFecha}
+                    onChange={(event) => setFechaHora(event.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="contact-message">{t("contact_mensaje")}</label>
               <textarea
-                rows={5}
+                id="contact-message"
+                rows={4}
                 placeholder={t("contact_placeholder_mensaje")}
                 className="form-textarea"
                 value={message}
@@ -168,7 +309,23 @@ const Contact = () => {
               />
             </div>
 
-            <button type="submit" className="btn-submit btn-whatsapp">
+            {status.text && (
+              <p className={status.type === "ok" ? "form-status-ok" : "form-status-error"} role="status">
+                {status.text}
+              </p>
+            )}
+
+            {canBook && (
+              <button type="submit" className="btn-submit" disabled={submitting}>
+                {submitting ? t("contact_reservando") : t("contact_reservar")}
+              </button>
+            )}
+
+            <button
+              type={canBook ? "button" : "submit"}
+              className={`btn-submit btn-whatsapp${canBook ? " btn-submit-secondary" : ""}`}
+              onClick={canBook ? openWhatsApp : undefined}
+            >
               {t("contact_enviar_whatsapp")}
             </button>
           </motion.form>

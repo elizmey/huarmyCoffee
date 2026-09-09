@@ -1,70 +1,76 @@
-# Getting Started with Create React App
+# Huarmy Coffee
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema web de cafetería y restaurante: sitio público, portal empresarial y panel de administración. El expediente académico (puntos de función, Gantt, red crítica, roles, dashboard, indicadores, BSC y modularidad) está en [INFORME.md](INFORME.md).
 
-## Available Scripts
+## Qué incluye
 
-In the project directory, you can run:
+**Sitio público** (`/`): inicio, menú, promociones, historia, servicios, ubicación, contacto (reserva y WhatsApp) y acceso al portal.
 
-### `npm start`
+**Portal** (`/portal`): entrada empresarial.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Admin** (`/admin`): dashboard, tablero BSC, menú (pestañas), citas, pedidos y caja, clientes, proveedores, socios, sucursales, inventarios, capacidad, comunicación y usuarios.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Stack
 
-### `npm test`
+- Cliente: React (TypeScript/TSX), Create React App, puerto **3000**
+- API: Express (JavaScript), puerto **3001** (`proxy` del front apunta aquí)
+- Base de datos: PostgreSQL
+- Auth: JWT + bcrypt (Firebase Auth es opcional)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Arranque local
 
-### `npm run build`
+1. PostgreSQL con las variables `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` (o los valores por defecto de `server/db.js`).
+2. Instalar dependencias: `npm install`
+3. Esquema y usuarios de prueba: `npm run seed`
+4. API: `npm run api`
+5. Front: `npm start`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+En otra terminal, o todo junto: `npm run dev`.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+En **Node 17+** (incluye Node 24) el front de CRA suele necesitar:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```powershell
+$env:NODE_OPTIONS='--openssl-legacy-provider'
+npm start
+```
 
-### `npm run eject`
+## Cuentas de prueba
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Superadmin (`admin`) | `admin@huarmycoffee.com` | `admin123` |
+| Recepcionista | `recepcionista@huarmycoffee.com` | `recepcionista123` |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Roles del sistema: `admin`, `gerente`, `recepcionista`, `cajero`. Quién ve cada módulo está en [INFORME.md](INFORME.md) (sección 4). El superadmin consulta el reporte de bitácora (`GET /api/auditoria`): qué hicieron los demás en el portal.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Scripts
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+| Script | Uso |
+|---|---|
+| `npm start` | Front en http://localhost:3000 |
+| `npm run api` | API en http://localhost:3001 |
+| `npm run dev` | API y front a la vez |
+| `npm run seed` | `init.sql` + usuarios core |
+| `npm run build` | Build de producción del cliente |
 
-## Learn More
+## Módulos del admin
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Ruta | Módulo |
+|---|---|
+| `/admin` | Dashboard (conteos, stock ≤ 3, resumen BSC) |
+| `/admin/scorecard` | Tablero de comando BSC (indicadores, meta y estándar; perspectiva Procesos) |
+| `/admin/menu` | Servicios y Productos · Galería · Promociones y Paquetes |
+| `/admin/citas` | Agenda |
+| `/admin/pedidos` | Pedidos y caja |
+| `/admin/clientes` | Clientes |
+| `/admin/inventarios` | Inventario (Stock Bajo si cantidad ≤ 3) |
+| `/admin/capacidad` | Aforo por sucursal |
+| `/admin/sucursales` | Sedes |
+| `/admin/proveedores` | Proveedores |
+| `/admin/socios` | Socios |
+| `/admin/comunicacion` | Comunicación interna |
+| `/admin/usuarios` | Cuentas, rol y sucursal (solo admin) |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Entregables académicos
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Ver [INFORME.md](INFORME.md): puntos de función IFPUG, diagrama de Gantt, red crítica y holguras, definición de roles, reporte del superadmin, dashboard, indicadores y estándares, tablero BSC (perspectiva Procesos), identidad y modularidad.
