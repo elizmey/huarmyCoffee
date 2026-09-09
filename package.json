@@ -38,7 +38,7 @@
     "firebase:seed": "node scripts/seedFirebaseUsers.mjs"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "proxy": "http://localhost:3001",
   "eslintConfig": {

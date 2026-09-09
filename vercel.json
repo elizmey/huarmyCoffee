@@ -1,6 +1,6 @@
 {
   "framework": "create-react-app",
-  "buildCommand": "CI=false NODE_OPTIONS=--openssl-legacy-provider npx react-scripts build",
+  "buildCommand": "CI=false GENERATE_SOURCEMAP=false NODE_OPTIONS=--openssl-legacy-provider npx react-scripts build",
   "outputDirectory": "build",
   "installCommand": "npm install",
   "functions": {
@@ -8,5 +8,8 @@
       "maxDuration": 10,
       "includeFiles": "server/**"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }

@@ -15,8 +15,11 @@ const { buildFunctionPoints } = require('./functionPoints');
 const { pedidosRouter } = require('./pedidos');
 
 const app = express();
-const JWT_SECRET = requireEnv('JWT_SECRET');
 const JWT_EXPIRES = envOr('JWT_EXPIRES', '24h');
+
+function getJwtSecret() {
+  return requireEnv('JWT_SECRET');
+}
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, contentSecurityPolicy: false }));
 app.use(cors());
@@ -41,29 +44,31 @@ const publicWriteLimiter = rateLimit({
 const MISION_TEXT = 'Ofrecer una experiencia gastronómica auténtica que rescata los sabores tradicionales ecuatorianos, brindando a nuestros clientes calidad, calidez y un ambiente acogedor en cada una de nuestras sucursales.';
 const VISION_TEXT = 'Ser la cadena de cafeterías y restaurantes ecuatorianos más reconocida del país para 2030, expandiendo nuestra propuesta gastronómica con valores de identidad, sostenibilidad y excelencia en el servicio.';
 
-const initSQL = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf8');
-pool.query(initSQL)
-  .then(async () => {
-    await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_mision_vision_tipo ON mision_vision (tipo)');
-    await pool.query(
-      `INSERT INTO mision_vision (tipo, contenido, activo)
-       SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
-      ['mision', MISION_TEXT]
-    );
-    await pool.query(
-      `INSERT INTO mision_vision (tipo, contenido, activo)
-       SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
-      ['vision', VISION_TEXT]
-    );
-    await seedProjectPlan();
-  })
-  .catch(err => console.error('Error executing database migrations:', err));
+function runStartupMigrations() {
+  const initSQL = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf8');
+  return pool.query(initSQL)
+    .then(async () => {
+      await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_mision_vision_tipo ON mision_vision (tipo)');
+      await pool.query(
+        `INSERT INTO mision_vision (tipo, contenido, activo)
+         SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
+        ['mision', MISION_TEXT]
+      );
+      await pool.query(
+        `INSERT INTO mision_vision (tipo, contenido, activo)
+         SELECT $1::varchar(20), $2::text, true WHERE NOT EXISTS (SELECT 1 FROM mision_vision WHERE tipo = $1::varchar(20))`,
+        ['vision', VISION_TEXT]
+      );
+      await seedProjectPlan();
+    })
+    .catch((err) => console.error('Error executing database migrations:', err));
+}
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Token requerido' });
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, getJwtSecret(), (err, user) => {
     if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
     req.user = user;
     next();
@@ -303,7 +308,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Credenciales inválidas' });
     const token = jwt.sign(
       { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, sucursal_id: user.sucursal_id },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: JWT_EXPIRES }
     );
     res.json({ token, user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, sucursal_id: user.sucursal_id } });
@@ -678,7 +683,9 @@ module.exports = app;
 
 if (require.main === module) {
   const port = envOr('API_PORT', envOr('PORT', '3001'));
-  app.listen(port, () => {
-    console.log(`API corriendo en http://localhost:${port}`);
+  runStartupMigrations().finally(() => {
+    app.listen(port, () => {
+      console.log(`API corriendo en http://localhost:${port}`);
+    });
   });
 }

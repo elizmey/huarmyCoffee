@@ -36,10 +36,22 @@ function createPool() {
   });
 }
 
-const pool = createPool();
+let pool;
 
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle PostgreSQL client', err);
+function getPool() {
+  if (!pool) {
+    pool = createPool();
+    pool.on('error', (err) => {
+      console.error('Unexpected error on idle PostgreSQL client', err);
+    });
+  }
+  return pool;
+}
+
+module.exports = new Proxy({}, {
+  get(_target, prop) {
+    const instance = getPool();
+    const value = instance[prop];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
 });
-
-module.exports = pool;

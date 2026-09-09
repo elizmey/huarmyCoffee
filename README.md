@@ -38,8 +38,8 @@ npm start
 
 Esta rama ya incluye `vercel.json` y una función serverless para `/api`. Vercel **no** trae PostgreSQL: crea una base (Neon, Supabase o Vercel Postgres) y pega la URL.
 
-1. Sube el repo y elige la rama `feature/cotizador-fixes-and-docs` (o `main` cuando esté mergeada).
-2. Framework: Create React App (lo detecta solo). Node **20**.
+1. Sube el repo y elige la rama `main`.
+2. Framework: Create React App (lo detecta solo). Node **24.x** (`engines` en `package.json`).
 3. En **Settings → Environment Variables** agrega al menos:
 
 | Variable | Ejemplo |
