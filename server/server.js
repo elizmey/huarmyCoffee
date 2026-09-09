@@ -8,16 +8,15 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const pool = require('./db');
-const { requireEnv } = require('./env');
+const { requireEnv, envOr, isVercel } = require('./env');
 const { MODULES, TABLE_ROLES, BRANCH_SCOPED, ROLE_LABELS } = require('./roles');
 const { computeCpm, normalizePreds } = require('./cpm');
 const { buildFunctionPoints } = require('./functionPoints');
 const { pedidosRouter } = require('./pedidos');
 
 const app = express();
-const PORT = requireEnv('API_PORT');
 const JWT_SECRET = requireEnv('JWT_SECRET');
-const JWT_EXPIRES = requireEnv('JWT_EXPIRES');
+const JWT_EXPIRES = envOr('JWT_EXPIRES', '24h');
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, contentSecurityPolicy: false }));
 app.use(cors());
@@ -519,9 +518,9 @@ app.post('/api/reset-password', loginLimiter, async (req, res) => {
 
 app.post('/api/public/citas', publicWriteLimiter, async (req, res) => {
   try {
-    const { nombre, email, telefono, sucursal_id, servicio_id, fecha_hora } = req.body || {};
-    if (!nombre || !email || !sucursal_id || !servicio_id || !fecha_hora) {
-      return res.status(400).json({ error: 'Nombre, email, sucursal, servicio y fecha son requeridos' });
+    const { nombre, email, telefono, fecha_hora } = req.body || {};
+    if (!nombre || !email || !fecha_hora) {
+      return res.status(400).json({ error: 'Nombre, email y fecha son requeridos' });
     }
     const emailNorm = String(email).trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm)) {
@@ -529,11 +528,6 @@ app.post('/api/public/citas', publicWriteLimiter, async (req, res) => {
     }
     const when = new Date(fecha_hora);
     if (Number.isNaN(when.getTime())) return res.status(400).json({ error: 'Fecha inválida' });
-
-    const suc = await pool.query('SELECT id FROM sucursales WHERE id = $1 AND activo = true', [sucursal_id]);
-    if (!suc.rows.length) return res.status(400).json({ error: 'Sucursal no válida' });
-    const serv = await pool.query('SELECT id FROM servicios WHERE id = $1 AND activo = true', [servicio_id]);
-    if (!serv.rows.length) return res.status(400).json({ error: 'Servicio no válido' });
 
     let clienteId;
     const existing = await pool.query('SELECT id FROM clientes WHERE LOWER(email) = $1 LIMIT 1', [emailNorm]);
@@ -552,8 +546,8 @@ app.post('/api/public/citas', publicWriteLimiter, async (req, res) => {
     }
     const { rows } = await pool.query(
       `INSERT INTO citas (cliente_id, sucursal_id, servicio_id, fecha_hora, estado)
-       VALUES ($1, $2, $3, $4, 'pendiente') RETURNING *`,
-      [clienteId, sucursal_id, servicio_id, when]
+       VALUES ($1, NULL, NULL, $2, 'pendiente') RETURNING *`,
+      [clienteId, when]
     );
     await logAudit(
       { user: { id: null, nombre: String(nombre).trim(), rol: 'publico' }, originalUrl: '/api/public/citas' },
@@ -663,21 +657,28 @@ app.get('/api/public/vision', async (_, res) => {
   }
 });
 
-const buildDir = path.join(__dirname, '../build');
-const buildIndex = path.join(buildDir, 'index.html');
-if (fs.existsSync(buildIndex)) {
-  app.use(express.static(buildDir));
-  app.use((req, res) => {
-    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Ruta no encontrada' });
-    res.sendFile(buildIndex);
-  });
-} else {
-  app.use((req, res) => {
-    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Ruta no encontrada' });
-    res.status(404).json({ error: 'Frontend no compilado. Usa npm start en el puerto 3000.' });
-  });
+if (!isVercel) {
+  const buildDir = path.join(__dirname, '../build');
+  const buildIndex = path.join(buildDir, 'index.html');
+  if (fs.existsSync(buildIndex)) {
+    app.use(express.static(buildDir));
+    app.use((req, res) => {
+      if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Ruta no encontrada' });
+      res.sendFile(buildIndex);
+    });
+  } else {
+    app.use((req, res) => {
+      if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Ruta no encontrada' });
+      res.status(404).json({ error: 'Frontend no compilado. Usa npm start en el puerto 3000.' });
+    });
+  }
 }
 
-app.listen(PORT, () => {
-  console.log(`API corriendo en http://localhost:${PORT}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  const port = envOr('API_PORT', envOr('PORT', '3001'));
+  app.listen(port, () => {
+    console.log(`API corriendo en http://localhost:${port}`);
+  });
+}

@@ -1,0 +1,12 @@
+{
+  "framework": "create-react-app",
+  "buildCommand": "CI=false NODE_OPTIONS=--openssl-legacy-provider npx react-scripts build",
+  "outputDirectory": "build",
+  "installCommand": "npm install",
+  "functions": {
+    "api/[[...path]].js": {
+      "maxDuration": 10,
+      "includeFiles": "server/**"
+    }
+  }
+}

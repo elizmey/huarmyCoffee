@@ -34,6 +34,36 @@ $env:NODE_OPTIONS='--openssl-legacy-provider'
 npm start
 ```
 
+## Despliegue en Vercel
+
+Esta rama ya incluye `vercel.json` y una función serverless para `/api`. Vercel **no** trae PostgreSQL: crea una base (Neon, Supabase o Vercel Postgres) y pega la URL.
+
+1. Sube el repo y elige la rama `feature/cotizador-fixes-and-docs` (o `main` cuando esté mergeada).
+2. Framework: Create React App (lo detecta solo). Node **20**.
+3. En **Settings → Environment Variables** agrega al menos:
+
+| Variable | Ejemplo |
+|---|---|
+| `DATABASE_URL` | `postgresql://user:pass@host/db?sslmode=require` |
+| `JWT_SECRET` | una cadena larga y aleatoria |
+| `JWT_EXPIRES` | `24h` (opcional) |
+| `FRONTEND_URL` | `https://tu-proyecto.vercel.app` |
+
+Firebase (`REACT_APP_FIREBASE_*`) es opcional. Si no las pones, el sitio y el login JWT siguen funcionando.
+
+4. Tras el primer deploy, carga esquema y usuarios contra esa base **desde tu PC**:
+
+```powershell
+$env:DATABASE_URL='postgresql://...'
+$env:SEED_ADMIN_EMAIL='admin@huarmycoffee.com'
+$env:SEED_ADMIN_PASSWORD='admin123'
+$env:SEED_RECEPCIONISTA_EMAIL='recepcionista@huarmycoffee.com'
+$env:SEED_RECEPCIONISTA_PASSWORD='recepcionista123'
+npm run seed
+```
+
+El front queda en `https://tu-proyecto.vercel.app` y la API en `https://tu-proyecto.vercel.app/api`.
+
 ## Cuentas de prueba
 
 | Rol | Correo | Contraseña |

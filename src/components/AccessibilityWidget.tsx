@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
-import { Eye, ZoomIn, ZoomOut, Check, Volume2, Images, StopCircle } from 'lucide-react';
+import {
+  Eye, ZoomIn, ZoomOut, Volume2, Images, StopCircle, Contrast, Blend, Type, RotateCcw, X, Languages,
+} from 'lucide-react';
 import { useTranslation, languages } from '../i18n';
 import '../assets/css/style.css';
 
@@ -18,6 +20,7 @@ const AccessibilityWidget = () => {
   const [highContrast, setHighContrast] = useState(() => readStoredBool('access_highContrast'));
   const [grayscale, setGrayscale] = useState(() => readStoredBool('access_grayscale'));
   const [legibleFont, setLegibleFont] = useState(() => readStoredBool('access_legibleFont'));
+  const [speaking, setSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
@@ -32,12 +35,22 @@ const AccessibilityWidget = () => {
   }, []);
 
   useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       window.speechSynthesis.pause();
       window.speechSynthesis.resume();
     }
+    setSpeaking(false);
   }, [isOpen]);
 
   useEffect(() => {
@@ -50,10 +63,6 @@ const AccessibilityWidget = () => {
       document.body.classList.remove('grayscale-filter', 'high-contrast', 'legible-font');
     };
   }, []);
-
-  const handleOpen = () => {
-    setIsOpen((prev) => !prev);
-  };
 
   const applyAccessibility = useCallback(() => {
     const body = document.body;
@@ -80,20 +89,21 @@ const AccessibilityWidget = () => {
     applyAccessibility();
   }, [applyAccessibility]);
 
-  const resetAll = () => {
-    setFontSize(100);
-    setHighContrast(false);
-    setGrayscale(false);
-    setLegibleFont(false);
-    stopSpeaking();
-  };
-
   const stopSpeaking = () => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     window.speechSynthesis.pause();
     window.speechSynthesis.resume();
     utteranceRef.current = null;
+    setSpeaking(false);
+  };
+
+  const resetAll = () => {
+    setFontSize(100);
+    setHighContrast(false);
+    setGrayscale(false);
+    setLegibleFont(false);
+    stopSpeaking();
   };
 
   const speak = (text: string) => {
@@ -106,9 +116,14 @@ const AccessibilityWidget = () => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : lang === 'pt' ? 'pt-PT' : 'es-ES';
     utterance.onend = () => {
-      if (utteranceRef.current === utterance) utteranceRef.current = null;
+      if (utteranceRef.current === utterance) {
+        utteranceRef.current = null;
+        setSpeaking(false);
+      }
     };
+    utterance.onerror = () => setSpeaking(false);
     utteranceRef.current = utterance;
+    setSpeaking(true);
     window.speechSynthesis.speak(utterance);
   };
 
@@ -142,96 +157,111 @@ const AccessibilityWidget = () => {
     speak(t('access_page_intro') + text);
   };
 
-  return (
-    <div className="accessibility-widget-root">
-      <button
-        type="button"
-        onClick={handleOpen}
-        aria-label={t('access_btn_label')}
-        title={t('access_btn_label')}
-        aria-expanded={isOpen}
-        className="a11y-toggle-btn"
-      >
-        <Eye size={24} />
-      </button>
+  const activeCount = [highContrast, grayscale, legibleFont, fontSize !== 100].filter(Boolean).length;
 
+  return (
+    <div className={`accessibility-widget-root${isOpen ? ' is-open' : ''}`}>
       {isOpen && (
-        <div className="accessibility-widget-panel">
-          <div className="a11y-panel-header">
-            <span className="a11y-panel-title">{t('access_title')}</span>
-            <button type="button" onClick={resetAll} className="a11y-reset-btn">
-              {t('access_reset')}
+        <div className="a11y-dial" role="dialog" aria-label={t('access_title')}>
+          <div className="a11y-chip-row" role="group" aria-label={t('access_language')}>
+            <Languages size={14} className="a11y-chip-icon" aria-hidden="true" />
+            {languages.map((item) => (
+              <button
+                key={item.code}
+                type="button"
+                className={`a11y-lang-chip${lang === item.code ? ' is-on' : ''}`}
+                onClick={() => changeLanguage(item.code)}
+                aria-pressed={lang === item.code}
+                title={item.name}
+              >
+                {item.code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <div className="a11y-chip-row a11y-size-row" role="group" aria-label={t('access_text_size')}>
+            <button
+              type="button"
+              onClick={() => setFontSize((prev) => Math.max(prev - 10, 80))}
+              className="a11y-round-btn"
+              aria-label={t('access_zoom_out')}
+            >
+              <ZoomOut size={18} />
+            </button>
+            <span className="a11y-size-value">{fontSize}%</span>
+            <button
+              type="button"
+              onClick={() => setFontSize((prev) => Math.min(prev + 10, 150))}
+              className="a11y-round-btn"
+              aria-label={t('access_zoom_in')}
+            >
+              <ZoomIn size={18} />
             </button>
           </div>
 
-          <div>
-            <span className="a11y-field-label">{t('access_language')}</span>
-            <select
-              aria-label={t('access_language')}
-              value={lang}
-              onChange={(e) => changeLanguage(e.target.value)}
-              className="a11y-select"
-            >
-              {languages.map((l) => (
-                <option key={l.code} value={l.code}>{l.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <span className="a11y-field-label">{t('access_text_size')}: {fontSize}%</span>
-            <div className="a11y-btn-row">
-              <button
-                type="button"
-                onClick={() => setFontSize((prev) => Math.max(prev - 10, 80))}
-                className="a11y-icon-btn"
-                aria-label={t('access_zoom_out')}
-              >
-                <ZoomOut size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setFontSize((prev) => Math.min(prev + 10, 150))}
-                className="a11y-icon-btn"
-                aria-label={t('access_zoom_in')}
-              >
-                <ZoomIn size={16} />
-              </button>
-            </div>
-          </div>
-
-          <button type="button" onClick={() => setHighContrast(!highContrast)} className={`a11y-toggle ${highContrast ? 'active' : ''}`}>
-            <span>{t('access_contrast')}</span>
-            {highContrast && <Check size={16} color="#d4a373" />}
+          <button
+            type="button"
+            className={`a11y-action${highContrast ? ' is-on' : ''}`}
+            onClick={() => setHighContrast((v) => !v)}
+            aria-pressed={highContrast}
+          >
+            <span className="a11y-round-btn" aria-hidden="true"><Contrast size={18} /></span>
+            <span className="a11y-action-label">{t('access_contrast')}</span>
           </button>
 
-          <button type="button" onClick={() => setGrayscale(!grayscale)} className={`a11y-toggle ${grayscale ? 'active' : ''}`}>
-            <span>{t('access_grayscale')}</span>
-            {grayscale && <Check size={16} color="#d4a373" />}
+          <button
+            type="button"
+            className={`a11y-action${grayscale ? ' is-on' : ''}`}
+            onClick={() => setGrayscale((v) => !v)}
+            aria-pressed={grayscale}
+          >
+            <span className="a11y-round-btn" aria-hidden="true"><Blend size={18} /></span>
+            <span className="a11y-action-label">{t('access_grayscale')}</span>
           </button>
 
-          <button type="button" onClick={() => setLegibleFont(!legibleFont)} className={`a11y-toggle ${legibleFont ? 'active' : ''}`}>
-            <span>{t('access_legible')}</span>
-            {legibleFont && <Check size={16} color="#d4a373" />}
+          <button
+            type="button"
+            className={`a11y-action${legibleFont ? ' is-on' : ''}`}
+            onClick={() => setLegibleFont((v) => !v)}
+            aria-pressed={legibleFont}
+          >
+            <span className="a11y-round-btn" aria-hidden="true"><Type size={18} /></span>
+            <span className="a11y-action-label">{t('access_legible')}</span>
           </button>
 
-          <div>
-            <span className="a11y-field-label">{t('access_narrated')}</span>
-            <div className="a11y-btn-row">
-              <button type="button" onClick={readPageText} className="a11y-labeled-btn">
-                <Volume2 size={16} /> {t('access_read_page')}
-              </button>
-              <button type="button" onClick={stopSpeaking} className="a11y-labeled-btn">
-                <StopCircle size={16} /> {t('access_stop')}
-              </button>
-            </div>
-          </div>
+          <button type="button" className={`a11y-action${speaking ? ' is-on' : ''}`} onClick={readPageText}>
+            <span className="a11y-round-btn" aria-hidden="true"><Volume2 size={18} /></span>
+            <span className="a11y-action-label">{t('access_read_page')}</span>
+          </button>
 
-          <button type="button" onClick={readImageDescriptions} className="a11y-full-btn">
-            <Images size={16} /> {t('access_images')}
+          <button type="button" className="a11y-action" onClick={stopSpeaking}>
+            <span className="a11y-round-btn" aria-hidden="true"><StopCircle size={18} /></span>
+            <span className="a11y-action-label">{t('access_stop')}</span>
+          </button>
+
+          <button type="button" className="a11y-action" onClick={readImageDescriptions}>
+            <span className="a11y-round-btn" aria-hidden="true"><Images size={18} /></span>
+            <span className="a11y-action-label">{t('access_images')}</span>
+          </button>
+
+          <button type="button" className="a11y-action a11y-action--reset" onClick={resetAll}>
+            <span className="a11y-round-btn" aria-hidden="true"><RotateCcw size={18} /></span>
+            <span className="a11y-action-label">{t('access_reset')}</span>
           </button>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-label={t('access_btn_label')}
+        title={t('access_btn_label')}
+        aria-expanded={isOpen}
+        className={`a11y-toggle-btn${isOpen ? ' is-open' : ''}${activeCount ? ' has-active' : ''}`}
+      >
+        {isOpen ? <X size={22} /> : <Eye size={22} />}
+        {!isOpen && activeCount > 0 && <span className="a11y-fab-dot" aria-hidden="true" />}
+      </button>
     </div>
   );
 };

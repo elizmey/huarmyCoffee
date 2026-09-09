@@ -42,11 +42,24 @@ function PublicSite() {
 
   useEffect(() => {
     if (!mobileMenuOpen) return undefined;
-    const handleKeyDown = (event) => { if (event.key === 'Escape') setMobileMenuOpen(false); };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
     window.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', handleKeyDown); document.body.style.overflow = ''; };
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    const closeOnDesktop = () => {
+      if (window.matchMedia('(min-width: 1100px)').matches) setMobileMenuOpen(false);
+    };
+    window.addEventListener('resize', closeOnDesktop);
+    return () => window.removeEventListener('resize', closeOnDesktop);
+  }, []);
 
   const navItems = [
     { id: 'inicio', label: t('inicio') },
@@ -74,20 +87,33 @@ function PublicSite() {
           <div className="site-header-actions">
             <nav className="site-nav desktop-nav" aria-label="Navegación principal">
               {navItems.map((item) => (
-                <a key={item.id} href={item.href || `#${item.id}`} className="site-nav-link" aria-label={item.icon ? item.label : undefined} title={item.icon ? item.label : undefined}>
+                <a
+                  key={item.id}
+                  href={item.href || `#${item.id}`}
+                  className={`site-nav-link${item.icon ? ' site-nav-link--icon' : ''}${item.id === 'portal' ? ' site-nav-link--accent' : ''}`}
+                  aria-label={item.icon ? item.label : undefined}
+                  title={item.icon ? item.label : undefined}
+                >
                   {item.icon ? <item.icon size={18} strokeWidth={2.2} aria-hidden="true" /> : item.label}
                 </a>
               ))}
             </nav>
           </div>
-          <button type="button" className="site-mobile-button mobile-menu-button" aria-label="Abrir menú" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} tabIndex={0}>
-            <MenuIcon size={22} strokeWidth={2.2} />
+          <button
+            type="button"
+            className="site-mobile-button mobile-menu-button"
+            aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-site-nav"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            {mobileMenuOpen ? <X size={22} strokeWidth={2.2} /> : <MenuIcon size={22} strokeWidth={2.2} />}
           </button>
         </div>
       </header>
 
       <div className={`mobile-menu-backdrop ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen(false)} />
-      <aside className={`mobile-menu-drawer ${mobileMenuOpen ? 'open' : ''}`} aria-hidden={!mobileMenuOpen}>
+      <aside id="mobile-site-nav" className={`mobile-menu-drawer ${mobileMenuOpen ? 'open' : ''}`} aria-hidden={!mobileMenuOpen}>
         <div className="mobile-menu-drawer-title">
           <span>{t('drawer_title')}</span>
           <button type="button" className="mobile-menu-close-btn" aria-label="Cerrar menú" onClick={() => setMobileMenuOpen(false)}>

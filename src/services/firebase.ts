@@ -13,15 +13,19 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const hasFirebase = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+
+export const app = hasFirebase ? initializeApp(firebaseConfig) : null;
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
 
 let analytics = null;
-try {
-  analytics = getAnalytics(app);
-} catch (err) {
-  console.warn("Firebase Analytics no disponible en este entorno", err);
+if (app) {
+  try {
+    analytics = getAnalytics(app);
+  } catch (err) {
+    console.warn("Firebase Analytics no disponible en este entorno", err);
+  }
 }
 export { analytics };
 

@@ -14,7 +14,7 @@
 
 .site-header {
   background: linear-gradient(135deg, #2c1a0f 0%, #3e2c23 100%);
-  padding: 10px 18px;
+  padding: 8px 16px;
   position: fixed;
   top: 0;
   left: 0;
@@ -30,27 +30,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
+  flex-wrap: nowrap;
 }
 
 .site-logo {
-  height: 58px;
+  height: 52px;
   width: auto;
   border-radius: 50%;
   border: 3px solid #d4a373;
+  flex-shrink: 0;
+  display: block;
 }
 
 .site-header-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .site-nav {
   display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
   align-items: center;
 }
 
@@ -66,22 +72,40 @@
   color: #f5e8d3;
   cursor: pointer;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .site-nav-link {
   color: #f5e8d3;
   text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 8px 14px;
-  border-radius: 30px;
-  transition: all 0.3s;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 999px;
+  transition: background-color 0.25s ease, color 0.25s ease;
   border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
-.site-nav-link:hover {
+.site-nav-link:hover,
+.site-nav-link:focus-visible {
   background-color: #d4a373;
   color: #2c1a0f;
+  outline: none;
+}
+
+.site-nav-link--accent {
+  border-color: rgba(212, 163, 115, 0.45);
+}
+
+.site-nav-link--icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-menu-drawer-title {
@@ -124,7 +148,7 @@
 }
 
 .site-content-spacer {
-  height: 84px;
+  height: 76px;
 }
 
 .site-footer {
@@ -164,9 +188,9 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: min(82vw, 320px);
-  height: 100vh;
-  padding: 18px 16px 22px;
+  width: min(86vw, 340px);
+  height: 100dvh;
+  padding: 18px 16px calc(22px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, #2c1a0f 0%, #3e2c23 100%);
   box-shadow: -18px 0 40px rgba(0, 0, 0, 0.24);
   transform: translateX(100%);
@@ -175,6 +199,8 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-menu-drawer.open {
@@ -226,13 +252,33 @@
   background: rgba(212, 163, 115, 0.18);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1099px) {
   .desktop-nav {
     display: none !important;
   }
 
+  .site-mobile-button,
   .mobile-menu-button {
     display: inline-flex !important;
+  }
+
+  .site-header {
+    padding: 8px 12px;
+  }
+
+  .site-logo {
+    height: 46px;
+  }
+
+  .site-content-spacer {
+    height: 68px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-nav-link {
+    font-size: 14px;
+    padding: 8px 12px;
   }
 }
 
@@ -243,7 +289,6 @@ body.grayscale-filter #site-content,
 body.grayscale-filter header,
 body.grayscale-filter .mobile-menu-backdrop,
 body.grayscale-filter .mobile-menu-drawer,
-body.grayscale-filter .accessibility-widget-root,
 body.grayscale-filter .whatsapp-float-container {
   filter: grayscale(100%) !important;
 }
@@ -282,17 +327,21 @@ body.high-contrast video {
   border: 2px solid #ffff00 !important;
 }
 
-/* Panel del widget: legible en alto contraste */
-body.high-contrast .accessibility-widget-panel,
-body.high-contrast .accessibility-widget-panel * {
-  background: #fff !important;
-  color: #000 !important;
-  border-color: #000 !important;
+body.high-contrast .accessibility-widget-root,
+body.high-contrast .accessibility-widget-root * {
+  background: transparent !important;
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+  filter: none !important;
 }
 
-body.high-contrast .accessibility-widget-panel button {
-  color: #000 !important;
-  border-color: #000 !important;
+body.high-contrast .a11y-toggle-btn,
+body.high-contrast .a11y-round-btn,
+body.high-contrast .a11y-lang-chip,
+body.high-contrast .a11y-size-value,
+body.high-contrast .a11y-action-label {
+  background: #000 !important;
+  color: #ffff00 !important;
 }
 
 .App.access-text-scaled {

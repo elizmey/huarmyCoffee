@@ -6,20 +6,13 @@ import "../assets/css/style.css";
 import { apiUrl } from "../api";
 import { useTranslation } from "../i18n";
 
-type Branch = { id: number; nombre: string };
-type Service = { id: number; nombre: string };
-
 const Contact = () => {
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
-  const [sucursalId, setSucursalId] = useState("");
-  const [servicioId, setServicioId] = useState("");
   const [fechaHora, setFechaHora] = useState("");
-  const [sucursales, setSucursales] = useState<Branch[]>([]);
-  const [servicios, setServicios] = useState<Service[]>([]);
   const [status, setStatus] = useState({ type: "", text: "" });
   const [submitting, setSubmitting] = useState(false);
   const [settings, setSettings] = useState({
@@ -43,20 +36,8 @@ const Contact = () => {
         }
       })
       .catch(err => console.warn("Usando configuraciones locales.", err));
-
-    Promise.all([
-      fetch(apiUrl("/public/sucursales")).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl("/public/servicios")).then(r => r.ok ? r.json() : []),
-    ]).then(([branches, services]) => {
-      setSucursales(Array.isArray(branches) ? branches : []);
-      setServicios(Array.isArray(services) ? services : []);
-    }).catch(() => {
-      setSucursales([]);
-      setServicios([]);
-    });
   }, []);
 
-  const canBook = sucursales.length > 0 && servicios.length > 0;
   const minFecha = useMemo(() => {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -72,19 +53,15 @@ const Contact = () => {
   ];
 
   const baseText = useMemo(() => {
-    const sucursal = sucursales.find((s) => String(s.id) === sucursalId);
-    const servicio = servicios.find((s) => String(s.id) === servicioId);
     return [
       t("contact_whatsapp_intro"),
       name ? `${t("contact_whatsapp_nombre")} ${name}` : null,
       email ? `${t("contact_email")}: ${email}` : null,
       phone ? `${t("contact_telefono")}: ${phone}` : null,
-      sucursal ? `${t("contact_sucursal")}: ${sucursal.nombre}` : null,
-      servicio ? `${t("contact_servicio")}: ${servicio.nombre}` : null,
       fechaHora ? `${t("contact_fecha")}: ${fechaHora.replace('T', ' ')}` : null,
       message ? `${t("contact_whatsapp_mensaje")} ${message}` : null,
     ].filter(Boolean).join("\n");
-  }, [t, name, email, phone, message, sucursalId, servicioId, fechaHora, sucursales, servicios]);
+  }, [t, name, email, phone, message, fechaHora]);
 
   const defaultWhatsappUrl = `https://wa.me/${settings.whatsapp_matriz}?text=${encodeURIComponent(baseText)}`;
 
@@ -94,10 +71,6 @@ const Contact = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canBook) {
-      openWhatsApp();
-      return;
-    }
     setStatus({ type: "", text: "" });
     setSubmitting(true);
     try {
@@ -108,9 +81,8 @@ const Contact = () => {
           nombre: name.trim(),
           email: email.trim(),
           telefono: phone.trim() || null,
-          sucursal_id: parseInt(sucursalId, 10),
-          servicio_id: parseInt(servicioId, 10),
           fecha_hora: fechaHora,
+          mensaje: message.trim() || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -210,14 +182,13 @@ const Contact = () => {
             className="form-card"
             onSubmit={handleSubmit}
           >
-            <h3 className="form-title">{canBook ? t("contact_reservar_titulo") : t("contact_envianos_mensaje")}</h3>
+            <h3 className="form-title">{t("contact_reservar_titulo")}</h3>
 
             <div className="form-group">
               <label className="form-label" htmlFor="contact-name">{t("contact_nombre")}</label>
               <input
                 id="contact-name"
                 type="text"
-                placeholder={t("contact_placeholder_nombre")}
                 className="form-input"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -230,11 +201,10 @@ const Contact = () => {
               <input
                 id="contact-email"
                 type="email"
-                placeholder={t("contact_placeholder_email")}
                 className="form-input"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                required={canBook}
+                required
               />
             </div>
 
@@ -243,66 +213,30 @@ const Contact = () => {
               <input
                 id="contact-phone"
                 type="tel"
-                placeholder={t("contact_placeholder_telefono")}
                 className="form-input"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
               />
             </div>
 
-            {canBook && (
-              <>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="contact-sucursal">{t("contact_sucursal")}</label>
-                  <select
-                    id="contact-sucursal"
-                    className="form-input form-select"
-                    value={sucursalId}
-                    onChange={(event) => setSucursalId(event.target.value)}
-                    required
-                  >
-                    <option value="">{t("contact_elige")}</option>
-                    {sucursales.map((item) => (
-                      <option key={item.id} value={item.id}>{item.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="contact-servicio">{t("contact_servicio")}</label>
-                  <select
-                    id="contact-servicio"
-                    className="form-input form-select"
-                    value={servicioId}
-                    onChange={(event) => setServicioId(event.target.value)}
-                    required
-                  >
-                    <option value="">{t("contact_elige")}</option>
-                    {servicios.map((item) => (
-                      <option key={item.id} value={item.id}>{item.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="contact-fecha">{t("contact_fecha")}</label>
-                  <input
-                    id="contact-fecha"
-                    type="datetime-local"
-                    className="form-input"
-                    value={fechaHora}
-                    min={minFecha}
-                    onChange={(event) => setFechaHora(event.target.value)}
-                    required
-                  />
-                </div>
-              </>
-            )}
+            <div className="form-group">
+              <label className="form-label" htmlFor="contact-fecha">{t("contact_fecha")}</label>
+              <input
+                id="contact-fecha"
+                type="datetime-local"
+                className="form-input"
+                value={fechaHora}
+                min={minFecha}
+                onChange={(event) => setFechaHora(event.target.value)}
+                required
+              />
+            </div>
 
             <div className="form-group">
               <label className="form-label" htmlFor="contact-message">{t("contact_mensaje")}</label>
               <textarea
                 id="contact-message"
                 rows={4}
-                placeholder={t("contact_placeholder_mensaje")}
                 className="form-textarea"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
@@ -315,16 +249,14 @@ const Contact = () => {
               </p>
             )}
 
-            {canBook && (
-              <button type="submit" className="btn-submit" disabled={submitting}>
-                {submitting ? t("contact_reservando") : t("contact_reservar")}
-              </button>
-            )}
+            <button type="submit" className="btn-submit" disabled={submitting}>
+              {submitting ? t("contact_reservando") : t("contact_reservar")}
+            </button>
 
             <button
-              type={canBook ? "button" : "submit"}
-              className={`btn-submit btn-whatsapp${canBook ? " btn-submit-secondary" : ""}`}
-              onClick={canBook ? openWhatsApp : undefined}
+              type="button"
+              className="btn-submit btn-whatsapp btn-submit-secondary"
+              onClick={openWhatsApp}
             >
               {t("contact_enviar_whatsapp")}
             </button>

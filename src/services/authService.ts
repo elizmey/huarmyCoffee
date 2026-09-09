@@ -44,9 +44,11 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
   const user = await loginWithPostgres(email, password);
 
   try {
-    const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    const firebaseToken = await credential.user.getIdToken();
-    localStorage.setItem('firebaseToken', firebaseToken);
+    if (auth) {
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const firebaseToken = await credential.user.getIdToken();
+      localStorage.setItem('firebaseToken', firebaseToken);
+    }
   } catch {
     /* Firebase opcional; el panel funciona solo con PostgreSQL */
   }
@@ -87,7 +89,7 @@ export async function resetPassword(token: string, password: string): Promise<vo
 
 export async function logoutAdmin(): Promise<void> {
   try {
-    await signOut(auth);
+    if (auth) await signOut(auth);
   } catch {
     /* ignore */
   }

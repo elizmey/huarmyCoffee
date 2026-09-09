@@ -237,13 +237,13 @@
   background: #3e2c23;
 }
 
-.btn-secondary {
-  background: #95a5a6;
-  color: white;
+.admin-layout .btn-secondary {
+  background: #efe4d6;
+  color: #2c1a0f;
 }
 
-.btn-secondary:hover {
-  background: #7f8c8d;
+.admin-layout .btn-secondary:hover {
+  background: #e4d3bf;
 }
 
 .btn-sm {
