@@ -22,6 +22,8 @@ const AccessibilityWidget = () => {
   const [legibleFont, setLegibleFont] = useState(() => readStoredBool('access_legibleFont'));
   const [speaking, setSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const cancelledRef = useRef(true);
+  const speakTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const closeMe = () => setIsOpen(false);
@@ -35,6 +37,16 @@ const AccessibilityWidget = () => {
   }, []);
 
   useEffect(() => {
+    if (!('speechSynthesis' in window)) return undefined;
+    const loadVoices = () => {
+      window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, []);
+
+  useEffect(() => {
     if (!isOpen) return undefined;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false);
@@ -44,22 +56,10 @@ const AccessibilityWidget = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) return;
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
-    }
-    setSpeaking(false);
-  }, [isOpen]);
-
-  useEffect(() => {
     return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
+      cancelledRef.current = true;
+      if (speakTimerRef.current) window.clearTimeout(speakTimerRef.current);
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       document.body.classList.remove('grayscale-filter', 'high-contrast', 'legible-font');
     };
   }, []);
@@ -89,11 +89,44 @@ const AccessibilityWidget = () => {
     applyAccessibility();
   }, [applyAccessibility]);
 
+  const speechLocale = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : lang === 'pt' ? 'pt-BR' : 'es-ES';
+
+  const splitForSpeech = (text: string) => {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    if (!clean) return [];
+    const parts = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+    const chunks: string[] = [];
+    let current = '';
+    parts.forEach((part) => {
+      const next = `${current} ${part}`.trim();
+      if (next.length > 180 && current) {
+        chunks.push(current);
+        current = part.trim();
+      } else {
+        current = next;
+      }
+    });
+    if (current) chunks.push(current);
+    return chunks;
+  };
+
+  const pickVoice = (locale: string) => {
+    const voices = window.speechSynthesis.getVoices();
+    const prefix = locale.slice(0, 2).toLowerCase();
+    return (
+      voices.find((voice) => voice.lang.replace('_', '-').toLowerCase() === locale.toLowerCase())
+      || voices.find((voice) => voice.lang.toLowerCase().startsWith(prefix))
+      || null
+    );
+  };
+
   const stopSpeaking = () => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.pause();
-    window.speechSynthesis.resume();
+    cancelledRef.current = true;
+    if (speakTimerRef.current) {
+      window.clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     utteranceRef.current = null;
     setSpeaking(false);
   };
@@ -107,24 +140,64 @@ const AccessibilityWidget = () => {
   };
 
   const speak = (text: string) => {
-    if (!text) return;
+    if (!text.trim()) return;
     if (!('speechSynthesis' in window)) {
       alert(t('access_not_supported'));
       return;
     }
+
     stopSpeaking();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : lang === 'pt' ? 'pt-PT' : 'es-ES';
-    utterance.onend = () => {
-      if (utteranceRef.current === utterance) {
-        utteranceRef.current = null;
+    cancelledRef.current = false;
+    setSpeaking(true);
+
+    const chunks = splitForSpeech(text);
+    let index = 0;
+
+    const speakNext = () => {
+      if (cancelledRef.current || index >= chunks.length) {
+        if (!cancelledRef.current) setSpeaking(false);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunks[index]);
+      utterance.lang = speechLocale;
+      utterance.rate = 1;
+      const voice = pickVoice(speechLocale);
+      if (voice) utterance.voice = voice;
+
+      utterance.onend = () => {
+        if (cancelledRef.current) return;
+        index += 1;
+        speakNext();
+      };
+      utterance.onerror = (event) => {
+        if (event.error === 'canceled' || event.error === 'interrupted') return;
         setSpeaking(false);
+      };
+
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
       }
     };
-    utterance.onerror = () => setSpeaking(false);
-    utteranceRef.current = utterance;
-    setSpeaking(true);
-    window.speechSynthesis.speak(utterance);
+
+    const start = () => {
+      if (cancelledRef.current) return;
+      speakNext();
+    };
+
+    if (window.speechSynthesis.getVoices().length === 0) {
+      const onVoices = () => {
+        window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+        speakTimerRef.current = window.setTimeout(start, 60);
+      };
+      window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+      speakTimerRef.current = window.setTimeout(start, 250);
+    } else {
+      speakTimerRef.current = window.setTimeout(start, 80);
+    }
   };
 
   const readImageDescriptions = () => {
@@ -142,19 +215,20 @@ const AccessibilityWidget = () => {
   };
 
   const readPageText = () => {
-    const main = document.querySelector('#main-content');
-    if (!main) {
-      speak(t('access_no_text'));
+    if (speaking) {
+      stopSpeaking();
       return;
     }
-    const clone = main.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll('.accessibility-widget-root, script, style').forEach((el) => el.remove());
+    const main = document.querySelector('#main-content');
+    const scope = (main || document.body) as HTMLElement;
+    const clone = scope.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.accessibility-widget-root, .a11y-dial, script, style, noscript, iframe').forEach((el) => el.remove());
     const text = clone.innerText?.replace(/\s+/g, ' ').trim() || '';
     if (!text) {
       speak(t('access_no_text'));
       return;
     }
-    speak(t('access_page_intro') + text);
+    speak(`${t('access_page_intro')} ${text}`);
   };
 
   const activeCount = [highContrast, grayscale, legibleFont, fontSize !== 100].filter(Boolean).length;

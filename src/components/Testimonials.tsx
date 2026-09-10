@@ -1,46 +1,61 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Star } from "lucide-react";
-import { useTranslation } from "../i18n";
-import { apiUrl } from "../api";
-import { handlePublicImageError, normalizePublicImageUrl } from "../utils/mediaUrl";
-import "../assets/css/style.css";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
+import { useTranslation } from '../i18n';
+import '../assets/css/style.css';
 
-type GaleriaItem = {
-  id: number;
-  titulo?: string;
-  url_imagen: string;
-  categoria?: string;
-  autor?: string | null;
-  comentario?: string | null;
-  calificacion?: number | null;
+const GOOGLE_REVIEWS = [
+  {
+    id: 'lorenzo',
+    name: 'Lorenzo C',
+    rating: 5,
+    initials: 'LC',
+    photo: '/imagenes/clientes/resena-destacada.png',
+    metaKey: 'test_lorenzo_meta',
+    quoteKey: 'test_lorenzo_quote',
+  },
+  {
+    id: 'ruth',
+    name: 'Ruth Guerrero',
+    rating: 4,
+    initials: 'RG',
+    photo: '',
+    metaKey: 'test_ruth_meta',
+    quoteKey: 'test_ruth_quote',
+  },
+  {
+    id: 'julissa',
+    name: 'Julissa Rivera',
+    rating: 5,
+    initials: 'JR',
+    photo: '',
+    metaKey: 'test_julissa_meta',
+    quoteKey: 'test_julissa_quote',
+    scoresKey: 'test_julissa_scores',
+  },
+] as const;
+
+const ReviewAvatar = ({ name, initials }: { name: string; initials: string }) => (
+  <div className="client-review-avatar" aria-hidden="true">
+    <span className="client-review-initials">{initials || name.slice(0, 1)}</span>
+  </div>
+);
+
+const ReviewPhoto = ({ src, alt }: { src: string; alt: string }) => {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return null;
+  return (
+    <img
+      className="client-review-photo"
+      src={src}
+      alt={alt}
+      onError={() => setFailed(true)}
+    />
+  );
 };
 
 const Clients = () => {
   const { t } = useTranslation();
-  const [clients, setClients] = useState<GaleriaItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(apiUrl("/public/galeria"))
-      .then((r) => r.json())
-      .then((rows: GaleriaItem[]) => {
-        if (!Array.isArray(rows)) {
-          setClients([]);
-          return;
-        }
-        const reviews = rows.filter((item) => {
-          const cat = (item.categoria || "").toLowerCase();
-          return cat === "reseña" || cat === "resena" || cat === "review" || cat === "cliente";
-        });
-        setClients(reviews.map((item) => ({
-          ...item,
-          url_imagen: normalizePublicImageUrl(item.url_imagen),
-        })));
-      })
-      .catch(() => setClients([]))
-      .finally(() => setLoading(false));
-  }, []);
 
   return (
     <section id="clientes" className="clients-section-large">
@@ -52,57 +67,59 @@ const Clients = () => {
           viewport={{ once: false }}
           transition={{ duration: 0.8 }}
         >
-          <span className="section-label">{t("test_label")}</span>
+          <span className="section-label">{t('test_label')}</span>
           <h2 className="section-title-large">
-            {t("test_title_1")} <span>{t("test_title_2")}</span> {t("test_title_3")}
+            {t('test_title_1')} <span>{t('test_title_2')}</span> {t('test_title_3')}
           </h2>
-          <p className="section-subtitle-large">{t("test_subtitle")}</p>
+          <p className="section-subtitle-large">{t('test_subtitle')}</p>
+          <p className="clients-google-score">
+            <strong>{t('test_google_rating')}</strong>
+            <span>{t('test_google_count')}</span>
+          </p>
         </motion.div>
 
-        {loading ? (
-          <p className="section-status-text section-status-text--block">
-            {t("test_loading") || "Cargando reseñas..."}
-          </p>
-        ) : clients.length === 0 ? (
-          <p className="section-status-text section-status-text--block">
-            {t("test_empty") || "Agrega reseñas en Admin → Galería (categoría: reseña)."}
-          </p>
-        ) : (
-          <div className="clients-grid-large">
-            {clients.map((client, index) => (
-              <motion.div
-                key={client.id}
-                className="client-card-large"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: false }}
-                transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
-                whileHover={{ y: -6 }}
-              >
-                <div className="client-review-card">
-                  <div className="client-review-top">
-                    <div className="client-review-avatar">
-                      <img src={client.url_imagen} alt={client.autor || client.titulo || "Reseña"} onError={handlePublicImageError} />
+        <div className="clients-grid-large">
+          {GOOGLE_REVIEWS.map((review, index) => (
+            <motion.div
+              key={review.id}
+              className="client-card-large"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: false }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+              whileHover={{ y: -6 }}
+            >
+              <article className="client-review-card">
+                <div className="client-review-top">
+                  <ReviewAvatar name={review.name} initials={review.initials} />
+                  <div className="client-review-meta">
+                    <div className="client-review-name-row">
+                      <h3>{review.name}</h3>
                     </div>
-                    <div className="client-review-meta">
-                      <div className="client-review-name-row">
-                        <h3>{client.autor || client.titulo || t("test_client") || "Cliente"}</h3>
-                      </div>
-                      <div className="client-review-rating" aria-label={`${client.calificacion || 5} de 5 estrellas`}>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} size={16} fill={i < (client.calificacion || 5) ? 'currentColor' : 'none'} strokeWidth={1.5} />
-                        ))}
-                      </div>
+                    <p>{t(review.metaKey)}</p>
+                    <div className="client-review-rating" aria-label={`${review.rating} / 5`}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={16}
+                          fill={i < review.rating ? 'currentColor' : 'none'}
+                          strokeWidth={1.5}
+                        />
+                      ))}
                     </div>
                   </div>
-                  {client.comentario && (
-                    <p className="client-review-quote">&ldquo;{client.comentario}&rdquo;</p>
-                  )}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                <p className="client-review-quote">&ldquo;{t(review.quoteKey)}&rdquo;</p>
+                {'scoresKey' in review && review.scoresKey ? (
+                  <p className="client-review-scores">{t(review.scoresKey)}</p>
+                ) : null}
+                {review.photo ? (
+                  <ReviewPhoto src={review.photo} alt={t('test_lorenzo_photo')} />
+                ) : null}
+              </article>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

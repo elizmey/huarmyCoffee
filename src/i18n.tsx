@@ -64,6 +64,10 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const changeLanguage = (newLang: string) => {
     if (LANG_CODES.includes(newLang as LangCode)) {
       setLang(newLang);
