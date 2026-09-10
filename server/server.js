@@ -13,7 +13,13 @@ const { MODULES, TABLE_ROLES, BRANCH_SCOPED, ROLE_LABELS } = require('./roles');
 const { computeCpm, normalizePreds } = require('./cpm');
 const { buildFunctionPoints } = require('./functionPoints');
 const { pedidosRouter } = require('./pedidos');
-const { FALLBACK_SERVICIOS, FALLBACK_PROMOCIONES, orFallback } = require('./publicCatalog');
+const {
+  FALLBACK_SERVICIOS,
+  FALLBACK_PROMOCIONES,
+  FALLBACK_GALERIA,
+  orFallback,
+  withNormalizedImages,
+} = require('./publicCatalog');
 
 const app = express();
 const JWT_EXPIRES = envOr('JWT_EXPIRES', '24h');
@@ -626,10 +632,10 @@ app.get('/api/public/sucursales', async (_, res) => {
 app.get('/api/public/galeria', async (_, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM galeria ORDER BY orden ASC, id ASC');
-    res.json(rows);
+    res.json(withNormalizedImages(orFallback(rows, FALLBACK_GALERIA)));
   } catch (e) {
     console.error('Error al cargar galería pública:', e);
-    res.json([]);
+    res.json(withNormalizedImages(FALLBACK_GALERIA));
   }
 });
 

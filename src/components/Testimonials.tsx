@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { useTranslation } from "../i18n";
 import { apiUrl } from "../api";
+import { handlePublicImageError, normalizePublicImageUrl } from "../utils/mediaUrl";
 import "../assets/css/style.css";
 
 type GaleriaItem = {
@@ -32,7 +33,10 @@ const Clients = () => {
           const cat = (item.categoria || "").toLowerCase();
           return cat === "reseña" || cat === "resena" || cat === "review" || cat === "cliente";
         });
-        setClients(reviews);
+        setClients(reviews.map((item) => ({
+          ...item,
+          url_imagen: normalizePublicImageUrl(item.url_imagen),
+        })));
       })
       .catch(() => setClients([]))
       .finally(() => setLoading(false));
@@ -78,7 +82,7 @@ const Clients = () => {
                 <div className="client-review-card">
                   <div className="client-review-top">
                     <div className="client-review-avatar">
-                      <img src={client.url_imagen} alt={client.autor || client.titulo || "Reseña"} />
+                      <img src={client.url_imagen} alt={client.autor || client.titulo || "Reseña"} onError={handlePublicImageError} />
                     </div>
                     <div className="client-review-meta">
                       <div className="client-review-name-row">

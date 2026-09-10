@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useTranslation } from "../i18n";
 import "../assets/css/style.css";
 import { apiUrl } from "../api";
+import { handlePublicImageError, normalizePublicImageUrl } from "../utils/mediaUrl";
 
 function Gallery() {
   const { t } = useTranslation();
@@ -29,7 +30,7 @@ function Gallery() {
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setGalleryImages(data.map(item => ({
-            src: item.url_imagen,
+            src: normalizePublicImageUrl(item.url_imagen),
             alt: item.titulo || t('gallery_default_alt')
           })));
         }
@@ -199,7 +200,7 @@ function Gallery() {
                 }}
                 aria-label={`${t('gallery_open')} ${idx + 1}`}
               >
-                <img src={img.src} alt={img.alt} className="carousel-image" loading="lazy" />
+                <img src={img.src} alt={img.alt} className="carousel-image" loading="lazy" onError={handlePublicImageError} />
                 <span className="carousel-badge">{t('gallery_view')}</span>
               </button>
             ))}
@@ -232,7 +233,7 @@ function Gallery() {
             </button>
 
             <div className="gallery-lightbox-image-wrap">
-              <img src={currentImage.src} alt={currentImage.alt} className="gallery-lightbox-image" />
+              <img src={currentImage.src} alt={currentImage.alt} className="gallery-lightbox-image" onError={handlePublicImageError} />
             </div>
 
             <button type="button" className="gallery-nav-button next" onClick={goNext} aria-label={t('gallery_next')}>
@@ -255,7 +256,7 @@ function Gallery() {
                   onClick={() => setSelectedIndex(index)}
                   aria-label={`${t('gallery_go')} ${index + 1}`}
                 >
-                  <img src={img.src} alt={img.alt} />
+                  <img src={img.src} alt={img.alt} onError={handlePublicImageError} />
                 </button>
               ))}
             </div>

@@ -58,4 +58,55 @@ function orFallback(rows, fallback) {
   return Array.isArray(rows) && rows.length ? rows : fallback;
 }
 
-module.exports = { FALLBACK_SERVICIOS, FALLBACK_PROMOCIONES, orFallback };
+const IMAGE_ALIASES = {
+  '/imagenes/clientes/reseña.png': '/imagenes/clientes/resena-destacada.png',
+  '/imagenes/clientes/resena.png': '/imagenes/clientes/resena-destacada.png',
+};
+
+function normalizeImageUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return '/imagenes/local/lugar1.jpg';
+  let path = raw;
+  try {
+    path = decodeURIComponent(raw);
+  } catch (_) {
+    path = raw;
+  }
+  if (IMAGE_ALIASES[raw]) return IMAGE_ALIASES[raw];
+  if (IMAGE_ALIASES[path]) return IMAGE_ALIASES[path];
+  if (/rese[nñ]a\.png$/i.test(path) && !/resena-destacada/i.test(path)) {
+    return '/imagenes/clientes/resena-destacada.png';
+  }
+  return path;
+}
+
+const FALLBACK_GALERIA = [
+  { id: 1, titulo: 'Interior del café', url_imagen: '/imagenes/local/lugar1.jpg', categoria: 'local', orden: 1 },
+  { id: 2, titulo: 'Ambiente acogedor', url_imagen: '/imagenes/local/lugar2.jpg', categoria: 'local', orden: 2 },
+  { id: 3, titulo: 'Mesas y decoración', url_imagen: '/imagenes/local/lugar3.jpg', categoria: 'local', orden: 3 },
+  { id: 4, titulo: 'Preparación de café', url_imagen: '/imagenes/local/lugar4.jpg', categoria: 'local', orden: 4 },
+  { id: 5, titulo: 'Detalles del local', url_imagen: '/imagenes/local/lugar5.jpg', categoria: 'local', orden: 5 },
+  { id: 6, titulo: 'Espacio familiar', url_imagen: '/imagenes/local/lugar6.jpg', categoria: 'local', orden: 6 },
+  { id: 7, titulo: 'Reseña destacada de una clienta', url_imagen: '/imagenes/clientes/resena-destacada.png', categoria: 'reseña', orden: 7, autor: 'Gabriela Torres', comentario: 'El ambiente es acogedor y el café tiene un sabor increíble.', calificacion: 5 },
+  { id: 8, titulo: 'Reseña de cliente', url_imagen: '/imagenes/clientes/cliente1.jpg', categoria: 'reseña', orden: 8, autor: 'Andrés Molina', comentario: 'Excelente lugar para reuniones de trabajo.', calificacion: 5 },
+  { id: 9, titulo: 'Reseña de cliente', url_imagen: '/imagenes/clientes/cliente2.jpg', categoria: 'reseña', orden: 9, autor: 'Daniela Espinoza', comentario: 'Volvería una y mil veces. La fritada es espectacular.', calificacion: 4 },
+  { id: 10, titulo: 'Reseña de cliente', url_imagen: '/imagenes/clientes/cliente3.jpg', categoria: 'reseña', orden: 10, autor: 'Ricardo Vallejo', comentario: 'Un espacio ideal para disfrutar en familia.', calificacion: 5 },
+  { id: 11, titulo: 'Reseña de cliente', url_imagen: '/imagenes/clientes/cliente4.jpg', categoria: 'reseña', orden: 11, autor: 'María Pérez', comentario: 'El café de especialidad vale cada visita.', calificacion: 5 },
+  { id: 12, titulo: 'Reseña de cliente', url_imagen: '/imagenes/clientes/cliente5.jpg', categoria: 'reseña', orden: 12, autor: 'Luis Andrade', comentario: 'Atención cálida y platos con sabor de casa.', calificacion: 5 },
+];
+
+function withNormalizedImages(rows) {
+  return (Array.isArray(rows) ? rows : []).map((row) => ({
+    ...row,
+    url_imagen: normalizeImageUrl(row.url_imagen),
+  }));
+}
+
+module.exports = {
+  FALLBACK_SERVICIOS,
+  FALLBACK_PROMOCIONES,
+  FALLBACK_GALERIA,
+  orFallback,
+  normalizeImageUrl,
+  withNormalizedImages,
+};
