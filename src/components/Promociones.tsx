@@ -244,7 +244,13 @@ const Promociones = () => {
     fetch(apiUrl("/public/promociones"))
       .then((r) => r.json())
       .then((rows) => {
-        if (!Array.isArray(rows) || rows.length === 0) return;
+        if (!Array.isArray(rows) || rows.length === 0) {
+          const defaults = createDefaultPromotions();
+          setPromotions(defaults);
+          setSelectedPromotionId(defaults[0]?.id || "");
+          setFeaturedPromotionId(defaults[0]?.id || "");
+          return;
+        }
         const mapped = rows.map((row) => ({
           id: String(row.id),
           title: row.titulo,
@@ -264,7 +270,12 @@ const Promociones = () => {
         setSelectedPromotionId(mapped[0]?.id || "");
         setFeaturedPromotionId(mapped[0]?.id || "");
       })
-      .catch(() => {});
+      .catch(() => {
+        const defaults = createDefaultPromotions();
+        setPromotions(defaults);
+        setSelectedPromotionId(defaults[0]?.id || "");
+        setFeaturedPromotionId(defaults[0]?.id || "");
+      });
   }, []);
 
   useEffect(() => {

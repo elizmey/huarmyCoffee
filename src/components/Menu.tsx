@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "../i18n";
-import { apiUrl } from "../api";
+import { loadPublicServicios } from "../data/publicCatalog";
+import type { PublicServicio } from "../data/publicCatalog";
 
-type MenuItem = {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  precio: number;
-  categoria_id?: number;
-  categoria_nombre?: string;
-};
+type MenuItem = PublicServicio;
 
 type MenuCategory = {
   id: string;
@@ -30,13 +24,8 @@ const Menu = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(apiUrl("/public/servicios"))
-      .then((r) => r.json())
-      .then((rows: MenuItem[]) => {
-        if (!Array.isArray(rows)) {
-          setCategories([]);
-          return;
-        }
+    loadPublicServicios()
+      .then((rows) => {
         const grouped: Record<string, MenuCategory> = {};
         rows.forEach((item) => {
           const key = String(item.categoria_id ?? "otros");
@@ -48,7 +37,6 @@ const Menu = () => {
         setCategories(list);
         if (list.length) setActiveCategory(list[0].id);
       })
-      .catch(() => setCategories([]))
       .finally(() => setLoading(false));
   }, []);
 

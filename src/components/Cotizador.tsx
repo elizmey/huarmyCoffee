@@ -3,15 +3,11 @@ import { motion } from 'framer-motion';
 import { MessageCircle, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { apiUrl } from '../api';
+import { loadPublicServicios } from '../data/publicCatalog';
+import type { PublicServicio } from '../data/publicCatalog';
 import '../assets/css/style.css';
 
-type ServicioItem = {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  precio: number;
-  categoria_nombre?: string;
-};
+type ServicioItem = PublicServicio;
 
 type TipoEvento = 'cumpleanos' | 'empresarial' | 'boda' | 'otro';
 
@@ -46,10 +42,8 @@ const Cotizador = () => {
   };
 
   useEffect(() => {
-    fetch(apiUrl('/public/servicios'))
-      .then((r) => r.json())
-      .then((rows) => setServicios(Array.isArray(rows) ? rows : []))
-      .catch(() => setServicios([]))
+    loadPublicServicios()
+      .then((rows) => setServicios(rows))
       .finally(() => setLoading(false));
 
     fetch(apiUrl('/public/configuracion'))

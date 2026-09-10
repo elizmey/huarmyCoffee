@@ -13,6 +13,7 @@ const { MODULES, TABLE_ROLES, BRANCH_SCOPED, ROLE_LABELS } = require('./roles');
 const { computeCpm, normalizePreds } = require('./cpm');
 const { buildFunctionPoints } = require('./functionPoints');
 const { pedidosRouter } = require('./pedidos');
+const { FALLBACK_SERVICIOS, FALLBACK_PROMOCIONES, orFallback } = require('./publicCatalog');
 
 const app = express();
 const JWT_EXPIRES = envOr('JWT_EXPIRES', '24h');
@@ -589,10 +590,10 @@ app.get('/api/public/promociones', async (_, res) => {
     const { rows } = await pool.query(
       'SELECT * FROM promociones WHERE activo = true ORDER BY fecha_inicio DESC NULLS LAST, id ASC'
     );
-    res.json(rows);
+    res.json(orFallback(rows, FALLBACK_PROMOCIONES));
   } catch (e) {
     console.error('Error al cargar promociones públicas:', e);
-    res.json([]);
+    res.json(FALLBACK_PROMOCIONES);
   }
 });
 
@@ -605,10 +606,10 @@ app.get('/api/public/servicios', async (_, res) => {
       WHERE s.activo = true
       ORDER BY c.nombre, s.nombre
     `);
-    res.json(rows);
+    res.json(orFallback(rows, FALLBACK_SERVICIOS));
   } catch (e) {
     console.error('Error al cargar servicios públicos:', e);
-    res.json([]);
+    res.json(FALLBACK_SERVICIOS);
   }
 });
 
@@ -682,7 +683,11 @@ if (!isVercel) {
 let migrationPromise;
 
 function ensureMigrated() {
-  if (!migrationPromise) migrationPromise = runStartupMigrations();
+  if (!migrationPromise) {
+    migrationPromise = Promise.resolve()
+      .then(() => runStartupMigrations())
+      .catch((err) => console.error('Error executing database migrations:', err));
+  }
   return migrationPromise;
 }
 
