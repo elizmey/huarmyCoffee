@@ -679,11 +679,19 @@ if (!isVercel) {
   }
 }
 
+let migrationPromise;
+
+function ensureMigrated() {
+  if (!migrationPromise) migrationPromise = runStartupMigrations();
+  return migrationPromise;
+}
+
+app.ensureMigrated = ensureMigrated;
 module.exports = app;
 
 if (require.main === module) {
   const port = envOr('API_PORT', envOr('PORT', '3001'));
-  runStartupMigrations().finally(() => {
+  ensureMigrated().finally(() => {
     app.listen(port, () => {
       console.log(`API corriendo en http://localhost:${port}`);
     });

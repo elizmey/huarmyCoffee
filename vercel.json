@@ -4,12 +4,13 @@
   "outputDirectory": "build",
   "installCommand": "npm install",
   "functions": {
-    "api/[[...path]].js": {
+    "api/index.js": {
       "maxDuration": 10,
       "includeFiles": "server/**"
     }
   },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
