@@ -16,6 +16,7 @@ export const nav: TranslationMap = {
   contactanos: { es: 'Contáctanos', en: 'Contact Us', fr: 'Contactez-nous', de: 'Kontaktieren Sie uns', pt: 'Fale Conosco' },
   derechos: { es: 'Todos los derechos reservados © 2026 Huarmy Coffee', en: 'All rights reserved © 2026 Huarmy Coffee', fr: 'Tous droits réservés © 2026 Huarmy Coffee', de: 'Alle Rechte vorbehalten © 2026 Huarmy Coffee', pt: 'Todos os direitos reservados © 2026 Huarmy Coffee' },
   skip_link: { es: 'Saltar al contenido principal', en: 'Skip to main content', fr: 'Aller au contenu principal', de: 'Zum Hauptinhalt springen', pt: 'Ir para o conteúdo principal' },
+  logo_alt: { es: 'Logo de Huarmy Coffee', en: 'Huarmy Coffee logo', fr: 'Logo de Huarmy Coffee', de: 'Logo von Huarmy Coffee', pt: 'Logo da Huarmy Coffee' },
   accesibilidad: { es: 'Accesibilidad', en: 'Accessibility', fr: 'Accessibilité', de: 'Barrierefreiheit', pt: 'Acessibilidade' },
   drawer_title: { es: 'Menú', en: 'Menu', fr: 'Menu', de: 'Menü', pt: 'Menu' },
   select_idioma: { es: 'Idioma', en: 'Language', fr: 'Langue', de: 'Sprache', pt: 'Idioma' },

@@ -68,10 +68,13 @@ const Nosotros = () => {
             transition={{ duration: 0.8, delay: 0.3 }}
           >
             <img
-              src="/nosotros/image.png"
+              src="/nosotros/image.webp"
               alt={t('nos_img_alt')}
               className="main-image"
               loading="lazy"
+              decoding="async"
+              width={900}
+              height={700}
             />
           </motion.div>
         </div>

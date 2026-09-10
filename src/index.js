@@ -4,7 +4,18 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import { LanguageProvider } from "./i18n";
-import "./services/firebase";
+
+const loadFirebaseLater = () => {
+  import("./services/firebase");
+};
+
+if (typeof window !== "undefined") {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(() => loadFirebaseLater());
+  } else {
+    window.setTimeout(loadFirebaseLater, 2500);
+  }
+}
 
 const container = document.getElementById("root");
 if (!container) {

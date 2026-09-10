@@ -9,11 +9,11 @@ export const portal: TranslationMap = {
     pt: 'Portal Empresarial',
   },
   portal_logo_alt: {
-    es: 'Logo',
-    en: 'Logo',
-    fr: 'Logo',
-    de: 'Logo',
-    pt: 'Logo',
+    es: 'Logo de Huarmy Coffee',
+    en: 'Huarmy Coffee logo',
+    fr: 'Logo de Huarmy Coffee',
+    de: 'Logo von Huarmy Coffee',
+    pt: 'Logo da Huarmy Coffee',
   },
   portal_public_site: {
     es: 'Sitio Público',

@@ -1,40 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Menu as MenuIcon, X, Home as HomeIcon } from 'lucide-react';
 import './App.css';
 
 import Home from './components/Home';
 import Menu from './components/Menu';
-import Contact from './components/Contact';
-import Testimonials from './components/Testimonials';
-import Gallery from './components/Gallery';
+import Promociones from './components/Promociones';
 import Nosotros from './components/Nosotros';
 import Servicios from './components/Servicios';
-import Promociones from './components/Promociones';
-import Ubicacion from './components/Ubicacion';
-import Cotizador from './components/Cotizador';
-
-import AdminLayout from './admin/AdminLayout';
-import Login from './admin/Login';
-import Dashboard from './admin/Dashboard';
-import Clientes from './admin/Clientes';
-import Proveedores from './admin/Proveedores';
-import Socios from './admin/Socios';
-import Sucursales from './admin/Sucursales';
-import Inventarios from './admin/Inventarios';
-import Capacidad from './admin/Capacidad';
-import Comunicacion from './admin/Comunicacion';
-import Scorecard from './admin/Scorecard';
-import Catalogo from './admin/Catalogo';
-import Citas from './admin/Citas';
-import Pedidos from './admin/Pedidos';
-import Usuarios from './admin/Usuarios';
-import ForgotPassword from './admin/ForgotPassword';
-import ResetPassword from './admin/ResetPassword';
-
-import Portal from './portal/Portal';
+import DeferSection from './components/DeferSection';
 import AccessibilityWidget from './components/AccessibilityWidget';
 import { useTranslation } from './i18n';
+
+const Cotizador = React.lazy(() => import('./components/Cotizador'));
+const Testimonials = React.lazy(() => import('./components/Testimonials'));
+const Gallery = React.lazy(() => import('./components/Gallery'));
+const Ubicacion = React.lazy(() => import('./components/Ubicacion'));
+const Contact = React.lazy(() => import('./components/Contact'));
+const Portal = React.lazy(() => import('./portal/Portal'));
+const AdminApp = React.lazy(() => import('./admin/AdminApp'));
 
 function PublicSite() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -82,7 +66,14 @@ function PublicSite() {
       <header className="site-header">
         <div className="site-header-container">
           <a href="/" aria-label="Ir al inicio">
-            <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" className="site-logo" />
+            <img
+              src="/imagenes/local/logo-lugar-sm.webp"
+              alt={t('logo_alt')}
+              className="site-logo"
+              width={52}
+              height={52}
+              decoding="async"
+            />
           </a>
           <div className="site-header-actions">
             <nav className="site-nav desktop-nav" aria-label="Navegación principal">
@@ -132,14 +123,20 @@ function PublicSite() {
       <div id="site-content">
         <div className="site-content-spacer" />
         <main id="main-content">
-          <Home /><Menu /><Promociones /><Nosotros /><Servicios /><Cotizador /><Testimonials /><Gallery /><Ubicacion /><Contact />
+          <Home /><Menu /><Promociones /><Nosotros /><Servicios />
+          <Suspense fallback={null}>
+            <DeferSection minHeight={420}><Cotizador /></DeferSection>
+            <DeferSection minHeight={480}><Testimonials /></DeferSection>
+            <DeferSection minHeight={520}><Gallery /></DeferSection>
+            <DeferSection minHeight={520}><Ubicacion /></DeferSection>
+            <DeferSection minHeight={640}><Contact /></DeferSection>
+          </Suspense>
         </main>
 
         <footer className="site-footer">
           <p>{t('derechos')}</p>
         </footer>
       </div>
-      <AccessibilityWidget />
     </div>
   );
 }
@@ -149,39 +146,27 @@ function App() {
 
   if (location.pathname.startsWith('/admin')) {
     return (
-      <Routes>
-        <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
-        <Route path="/admin/reset-password" element={<ResetPassword />} />
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="menu" element={<Catalogo />} />
-          <Route path="servicios" element={<Navigate to="/admin/menu" replace />} />
-          <Route path="galeria" element={<Navigate to="/admin/menu" replace />} />
-          <Route path="promociones" element={<Navigate to="/admin/menu" replace />} />
-          <Route path="roles" element={<Navigate to="/admin" replace />} />
-          <Route path="citas" element={<Citas />} />
-          <Route path="pedidos" element={<Pedidos />} />
-          <Route path="clientes" element={<Clientes />} />
-          <Route path="proveedores" element={<Proveedores />} />
-          <Route path="socios" element={<Socios />} />
-          <Route path="sucursales" element={<Sucursales />} />
-          <Route path="personal" element={<Navigate to="/admin/usuarios" replace />} />
-          <Route path="inventarios" element={<Inventarios />} />
-          <Route path="capacidad" element={<Capacidad />} />
-          <Route path="comunicacion" element={<Comunicacion />} />
-          <Route path="scorecard" element={<Scorecard />} />
-          <Route path="usuarios" element={<Usuarios />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<div className="route-fallback">Cargando…</div>}>
+        <AdminApp />
+      </Suspense>
     );
   }
 
   if (location.pathname.startsWith('/portal')) {
-    return <Portal />;
+    return (
+      <Suspense fallback={<div className="route-fallback">Cargando…</div>}>
+        <Portal />
+        <AccessibilityWidget />
+      </Suspense>
+    );
   }
 
-  return <PublicSite />;
+  return (
+    <>
+      <PublicSite />
+      <AccessibilityWidget />
+    </>
+  );
 }
 
 export default App;

@@ -13,10 +13,10 @@ import { useTranslation } from '../i18n';
 import '../assets/css/style.css';
 
 const CATALOG_IMAGES = [
-  '/imagenes/servicios/comida1.jpg',
-  '/imagenes/servicios/comida2.jpg',
-  '/imagenes/servicios/comida3.jpg',
-  '/imagenes/servicios/comida4.jpg',
+  '/imagenes/servicios/comida1.webp',
+  '/imagenes/servicios/comida2.webp',
+  '/imagenes/servicios/comida3.webp',
+  '/imagenes/servicios/comida4.webp',
 ];
 
 const SERVICE_OFFERS = [
@@ -82,7 +82,7 @@ const Servicios = () => {
         >
           {CATALOG_IMAGES.map((src, i) => (
             <div className="servicios-catalog-gallery-item" key={src}>
-              <img src={src} alt={`${t('serv_img_alt')} ${i + 1}`} loading="lazy" />
+              <img src={src} alt={t(`serv_img_alt_${i + 1}`) || `${t('serv_img_alt')} ${i + 1}`} loading="lazy" />
             </div>
           ))}
         </motion.div>

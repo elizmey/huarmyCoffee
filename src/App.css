@@ -344,6 +344,15 @@ body.high-contrast .a11y-action-label {
   color: #ffff00 !important;
 }
 
-.App.access-text-scaled {
+.App.access-text-scaled,
+.portal-page.access-text-scaled {
   zoom: var(--access-font-scale, 1);
+}
+
+.route-fallback {
+  min-height: 40vh;
+  display: grid;
+  place-items: center;
+  color: #5a4a3a;
+  font-family: inherit;
 }

@@ -55,12 +55,16 @@ type LanguageProviderProps = {
 };
 
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
-  const [lang, setLang] = useState('es');
+  const [lang, setLang] = useState<LangCode>(() => {
+    if (typeof window === 'undefined') return 'es';
+    const saved = window.localStorage.getItem('idioma');
+    return LANG_CODES.includes(saved as LangCode) ? (saved as LangCode) : 'es';
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem('idioma');
     if (saved && LANG_CODES.includes(saved as LangCode)) {
-      setLang(saved);
+      setLang(saved as LangCode);
     }
   }, []);
 
@@ -70,7 +74,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
 
   const changeLanguage = (newLang: string) => {
     if (LANG_CODES.includes(newLang as LangCode)) {
-      setLang(newLang);
+      setLang(newLang as LangCode);
       localStorage.setItem('idioma', newLang);
     }
   };

@@ -70,5 +70,33 @@ export const servicios: TranslationMap = {
   serv_cta_cotizar: { es: 'Armar cotización', en: 'Build a quote', fr: 'Créer un devis', de: 'Angebot erstellen', pt: 'Montar cotação' },
   serv_cta_reservar: { es: 'Reservar visita', en: 'Book a visit', fr: 'Réserver une visite', de: 'Besuch buchen', pt: 'Reservar visita' },
   serv_img_alt: { es: 'Foto de servicio de catering', en: 'Catering service photo', fr: 'Photo de service traiteur', de: 'Foto vom Catering-Service', pt: 'Foto de serviço de catering' },
+  serv_img_alt_1: {
+    es: 'Platos de comida tradicional ecuatoriana del catering',
+    en: 'Traditional Ecuadorian dishes from the catering menu',
+    fr: 'Plats traditionnels équatoriens du service traiteur',
+    de: 'Traditionelle ecuadorianische Gerichte aus dem Catering',
+    pt: 'Pratos da comida tradicional equatoriana do catering',
+  },
+  serv_img_alt_2: {
+    es: 'Preparación de alimentos para servicio de catering',
+    en: 'Food being prepared for catering service',
+    fr: 'Préparation des plats pour le service traiteur',
+    de: 'Zubereitung von Speisen für den Catering-Service',
+    pt: 'Preparo de alimentos para o serviço de catering',
+  },
+  serv_img_alt_3: {
+    es: 'Servicio de mesa y presentación de platos',
+    en: 'Table service and dish presentation',
+    fr: 'Service à table et présentation des plats',
+    de: 'Tischservice und Präsentation der Gerichte',
+    pt: 'Serviço de mesa e apresentação dos pratos',
+  },
+  serv_img_alt_4: {
+    es: 'Montaje de catering para evento o grupo',
+    en: 'Catering setup for an event or group',
+    fr: 'Installation traiteur pour un événement ou un groupe',
+    de: 'Catering-Aufbau für ein Event oder eine Gruppe',
+    pt: 'Montagem de catering para evento ou grupo',
+  },
   serv_otros: { es: 'Otros', en: 'Other', fr: 'Autres', de: 'Sonstiges', pt: 'Outros' },
 };

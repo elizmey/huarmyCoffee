@@ -66,14 +66,13 @@ const AccessibilityWidget = () => {
 
   const applyAccessibility = useCallback(() => {
     const body = document.body;
-    const app = document.querySelector('.App');
 
     document.documentElement.style.fontSize = `${(fontSize / 100) * 16}px`;
     document.documentElement.style.setProperty('--access-font-scale', String(fontSize / 100));
 
-    if (app) {
-      app.classList.toggle('access-text-scaled', fontSize !== 100);
-    }
+    document.querySelectorAll('.App, .portal-page').forEach((root) => {
+      root.classList.toggle('access-text-scaled', fontSize !== 100);
+    });
 
     body.classList.toggle('high-contrast', highContrast);
     body.classList.toggle('grayscale-filter', grayscale);
@@ -201,12 +200,14 @@ const AccessibilityWidget = () => {
   };
 
   const readImageDescriptions = () => {
-    const main = document.querySelector('#main-content');
+    const main = document.querySelector('#main-content, .portal-page');
     const scope = main || document.body;
     const images = Array.from(scope.querySelectorAll('img'));
-    const alts = images
-      .map((img) => img.getAttribute('alt'))
-      .filter((alt): alt is string => !!alt && alt.trim() !== '');
+    const alts = [...new Set(
+      images
+        .map((img) => img.getAttribute('alt'))
+        .filter((alt): alt is string => !!alt && alt.trim() !== '')
+    )];
     if (alts.length === 0) {
       speak(t('access_no_images'));
       return;

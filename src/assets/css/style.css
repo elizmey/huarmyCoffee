@@ -194,14 +194,13 @@ header {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transform: scale(1.03);
-  filter: contrast(1.05) saturate(1.05);
-  transition: transform 1s var(--hc-ease), filter 1s var(--hc-ease);
 }
 
-.premium-hero:hover .hero-bg-image {
-  transform: scale(1.08);
-  filter: contrast(1.06) saturate(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .premium-hero:hover .hero-bg-image {
+    transform: scale(1.04);
+    transition: transform 0.8s var(--hc-ease);
+  }
 }
 
 .hero-overlay {
@@ -908,16 +907,17 @@ header {
   filter: contrast(1.03) saturate(1.03);
 }
 
-.carousel-item:hover {
-  transform: translate3d(0, -48px, 220px) scale(1.2);
-  box-shadow: 0 92px 210px rgba(44, 26, 15, 0.38);
-  border-color: rgba(212, 163, 115, 0.35);
-  z-index: 8;
-}
+@media (hover: hover) and (pointer: fine) {
+  .carousel-item:hover {
+    transform: translate3d(0, -12px, 0) scale(1.04);
+    box-shadow: 0 28px 80px rgba(44, 26, 15, 0.22);
+    border-color: rgba(212, 163, 115, 0.35);
+    z-index: 8;
+  }
 
-.carousel-item:hover .carousel-image {
-  transform: translate3d(0, 0, 18px) scale(1.04);
-  filter: contrast(1.06) saturate(1.08);
+  .carousel-item:hover .carousel-image {
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
 }
 
 .gallery-lightbox {

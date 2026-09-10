@@ -64,11 +64,11 @@ const Portal = () => {
   };
 
   return (
-    <div className="portal-page">
+    <main id="main-content" className="portal-page">
       {/* Header */}
       <header className="portal-header portal-gradient-bg">
         <div className="portal-brand">
-          <img src="/imagenes/local/logo-lugar.jpg" alt="Huarmy Coffee" className="portal-brand-logo" />
+          <img src="/imagenes/local/logo-lugar-sm.webp" alt={t('portal_logo_alt')} className="portal-brand-logo" width={48} height={48} decoding="async" />
           <div>
             <div className="portal-brand-name">Huarmy Coffee</div>
             <div className="portal-brand-subtitle">{t('portal_title')}</div>
@@ -90,7 +90,7 @@ const Portal = () => {
       {/* Hero */}
       <section className="portal-hero portal-gradient-bg">
         <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-          <img src="/imagenes/local/logo-lugar.jpg" alt={t('portal_logo_alt')} className="portal-hero-logo" />
+          <img src="/imagenes/local/logo-lugar.webp" alt={t('portal_logo_alt')} className="portal-hero-logo" width={160} height={160} decoding="async" />
           <h1 className="portal-hero-title">{t('portal_title')}</h1>
           <p className="portal-hero-subtitle">
             {t('portal_hero_subtitle')}
@@ -215,7 +215,7 @@ const Portal = () => {
       <footer className="portal-footer">
         <p>{t('portal_footer')}</p>
       </footer>
-    </div>
+    </main>
   );
 };
 

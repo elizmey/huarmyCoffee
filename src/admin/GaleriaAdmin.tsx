@@ -127,7 +127,7 @@ const GaleriaAdmin = () => {
               <div className="gallery-card-image-wrap">
                 <img
                   src={item.url_imagen}
-                  alt={item.titulo}
+                  alt={item.titulo?.trim() || 'Imagen de la galería'}
                   className="gallery-card-image"
                   onError={(e) => { e.currentTarget.src = '/imagenes/local/logo-lugar.jpg'; }}
                 />

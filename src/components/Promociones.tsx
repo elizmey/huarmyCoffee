@@ -28,6 +28,7 @@ const WHATSAPP_NUMBER = "593983436356";
 const createDefaultPromotions = () => [
   {
     id: "promo-1",
+    i18nKey: "exec",
     title: "Menu Ejecutivo",
     type: "Corporativa",
     duration: "Disponible todo el mes",
@@ -41,6 +42,7 @@ const createDefaultPromotions = () => [
   },
   {
     id: "promo-2",
+    i18nKey: "groups",
     title: "Grupos y Eventos",
     type: "Celebracion",
     duration: "Reservas semanales",
@@ -54,6 +56,7 @@ const createDefaultPromotions = () => [
   },
   {
     id: "promo-3",
+    i18nKey: "delivery",
     title: "Delivery Corporativo",
     type: "Logistica",
     duration: "Programacion diaria",
@@ -84,19 +87,46 @@ const defaultHighlight = {
 
 const PROMOTION_ICONS = {
   Corporativa: Coffee,
+  Celebracion: PartyPopper,
   Celebración: PartyPopper,
+  Logistica: Truck,
   Logística: Truck,
 };
 
 const getPromotionIcon = (type) => PROMOTION_ICONS[type] || UtensilsCrossed;
 
-const PROMOTION_HIGHLIGHTS = {
-  Corporativa: "Mínimo 15 personas",
-  Celebración: "Ideal para tu celebración",
-  Logística: "Cobertura semanal programada",
+const detectPromoKey = (promotion) => {
+  if (promotion?.i18nKey) return promotion.i18nKey;
+  if (promotion?.id === "promo-1") return "exec";
+  if (promotion?.id === "promo-2") return "groups";
+  if (promotion?.id === "promo-3") return "delivery";
+  const title = String(promotion?.title || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (title.includes("coffee break")) return "break";
+  if (title.includes("cumpleanos") || title.includes("birthday") || title.includes("dulce")) return "bday";
+  if (title.includes("ejecutivo") || title.includes("executive")) return "exec";
+  if (title.includes("grupos") || title.includes("eventos") || title.includes("groups")) return "groups";
+  if (title.includes("delivery")) return "delivery";
+  return "";
 };
 
-const getPromotionHighlightChip = (type) => PROMOTION_HIGHLIGHTS[type] || "";
+const localizePromotion = (promotion, t) => {
+  const key = detectPromoKey(promotion);
+  if (!key) return promotion;
+  return {
+    ...promotion,
+    title: t(`promo_${key}_title`),
+    description: t(`promo_${key}_desc`),
+    tag: t(`promo_${key}_tag`),
+    duration: t(`promo_${key}_duration`),
+  };
+};
+
+const getPromotionHighlightChip = (type, t) => {
+  if (type === "Corporativa") return t("promo_chip_corp");
+  if (type === "Celebracion" || type === "Celebración") return t("promo_chip_celeb");
+  if (type === "Logistica" || type === "Logística") return t("promo_chip_log");
+  return "";
+};
 
 const isPersistableImage = (value) =>
   typeof value === "string" &&
@@ -135,32 +165,33 @@ const isPromotionActive = (promotion, now = new Date()) => {
   return true;
 };
 
-const formatDateLabel = (value) => {
+const formatDateLabel = (value, lang = "es") => {
   const date = parseDateAtLocalMidnight(value);
   if (!date) {
     return "";
   }
-  return date.toLocaleDateString("es-EC", {
+  const locale = lang === "en" ? "en-US" : lang === "fr" ? "fr-FR" : lang === "de" ? "de-DE" : lang === "pt" ? "pt-BR" : "es-EC";
+  return date.toLocaleDateString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
 };
 
-const getPromotionScheduleLabel = (promotion) => {
-  const start = formatDateLabel(promotion.startDate);
-  const end = formatDateLabel(promotion.endDate);
+const getPromotionScheduleLabel = (promotion, t, lang = "es") => {
+  const start = formatDateLabel(promotion.startDate, lang);
+  const end = formatDateLabel(promotion.endDate, lang);
 
   if (start && end) {
     return `${start} - ${end}`;
   }
   if (start) {
-    return `Desde ${start}`;
+    return `${t("promo_from")} ${start}`;
   }
   if (end) {
-    return `Hasta ${end}`;
+    return `${t("promo_until")} ${end}`;
   }
-  return promotion.duration || "Sin fecha";
+  return promotion.duration || t("promo_no_date");
 };
 
 const createPromotionId = () => `promo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -171,6 +202,7 @@ const createNewPromotion = (index = 0) => {
 
   return {
     id: createPromotionId(),
+    i18nKey: "",
     title: "Nueva promocion",
     type: fallback.type,
     duration: "Disponible esta semana",
@@ -207,14 +239,14 @@ const isPlaceholderPromotionDescription = (value) =>
   typeof value === "string" && value.trim().toLowerCase() === "describe aqui los beneficios de esta promocion.";
 
 const Promociones = () => {
-  const { t } = useTranslation();
-  const [promotions, setPromotions] = useState([]);
+  const { t, lang } = useTranslation();
+  const [promotions, setPromotions] = useState(createDefaultPromotions);
   const [packages, setPackages] = useState([]);
   const [highlight] = useState(defaultHighlight);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorPage, setEditorPage] = useState("promotions");
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
-  const [quoteContext, setQuoteContext] = useState({ type: "", title: "" });
+  const [quoteContext, setQuoteContext] = useState({ type: "", title: "", i18nKey: "" });
   const [quoteForm, setQuoteForm] = useState({
     name: "",
     phone: "",
@@ -244,15 +276,10 @@ const Promociones = () => {
     fetch(apiUrl("/public/promociones"))
       .then((r) => r.json())
       .then((rows) => {
-        if (!Array.isArray(rows) || rows.length === 0) {
-          const defaults = createDefaultPromotions();
-          setPromotions(defaults);
-          setSelectedPromotionId(defaults[0]?.id || "");
-          setFeaturedPromotionId(defaults[0]?.id || "");
-          return;
-        }
+        if (!Array.isArray(rows) || rows.length === 0) return;
         const mapped = rows.map((row) => ({
           id: String(row.id),
+          i18nKey: detectPromoKey({ title: row.titulo }),
           title: row.titulo,
           type: row.tipo || "",
           duration:
@@ -270,12 +297,7 @@ const Promociones = () => {
         setSelectedPromotionId(mapped[0]?.id || "");
         setFeaturedPromotionId(mapped[0]?.id || "");
       })
-      .catch(() => {
-        const defaults = createDefaultPromotions();
-        setPromotions(defaults);
-        setSelectedPromotionId(defaults[0]?.id || "");
-        setFeaturedPromotionId(defaults[0]?.id || "");
-      });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -298,16 +320,17 @@ const Promociones = () => {
     };
   }, []);
 
+  const localizedPromotions = promotions.map((promotion) => localizePromotion(promotion, t));
   const selectedPromotion = promotions.find((promotion) => promotion.id === selectedPromotionId) || promotions[0] || null;
-  const visiblePromotions = promotions.filter((promotion) => isPromotionActive(promotion));
+  const visiblePromotions = localizedPromotions.filter((promotion) => isPromotionActive(promotion));
   const featuredPromotion =
-    visiblePromotions.find((promotion) => promotion.id === featuredPromotionId) || visiblePromotions[0] || promotions[0] || null;
+    visiblePromotions.find((promotion) => promotion.id === featuredPromotionId) || visiblePromotions[0] || localizedPromotions[0] || null;
   const featuredPromotionTitle =
-    featuredPromotion && !isPlaceholderPromotionTitle(featuredPromotion.title) ? featuredPromotion.title : highlight.title;
+    featuredPromotion && !isPlaceholderPromotionTitle(featuredPromotion.title) ? featuredPromotion.title : t("promo_hl_title");
   const featuredPromotionDescription =
     featuredPromotion && !isPlaceholderPromotionDescription(featuredPromotion.description)
       ? featuredPromotion.description
-      : highlight.description;
+      : t("promo_hl_desc");
   const visibleOrderedPromotions = [
     ...visiblePromotions.filter((promotion) => promotion.id === featuredPromotionId),
     ...visiblePromotions.filter((promotion) => promotion.id !== featuredPromotionId),
@@ -527,8 +550,10 @@ const Promociones = () => {
     persistEditorState({ closeEditor: true });
   };
 
-  const openQuoteModal = (type, title) => {
-    setQuoteContext({ type, title });
+  const openQuoteModal = (type, item) => {
+    const title = typeof item === "string" ? item : item?.title || "";
+    const i18nKey = detectPromoKey(typeof item === "string" ? { title: item } : item);
+    setQuoteContext({ type, title, i18nKey });
     setQuoteModalOpen(true);
   };
 
@@ -543,17 +568,22 @@ const Promociones = () => {
     }));
   };
 
+  const quoteTitle = localizePromotion(
+    { title: quoteContext.title, i18nKey: quoteContext.i18nKey },
+    t
+  ).title;
+
   const submitQuoteToWhatsApp = (event) => {
     event.preventDefault();
 
     const message = [
-      `Hola Huarmy Coffee, quiero ${quoteContext.type === "package" ? "cotizar un paquete" : "reservar/cotizar una promocion"}.`,
-      quoteContext.title ? `Opcion: ${quoteContext.title}` : null,
-      quoteForm.name ? `Nombre: ${quoteForm.name}` : null,
-      quoteForm.phone ? `Telefono: ${quoteForm.phone}` : null,
-      quoteForm.date ? `Fecha: ${quoteForm.date}` : null,
-      quoteForm.guests ? `Personas: ${quoteForm.guests}` : null,
-      quoteForm.message ? `Mensaje: ${quoteForm.message}` : null,
+      quoteContext.type === "package" ? t("promo_wa_intro_pkg") : t("promo_wa_intro_promo"),
+      quoteTitle ? `${t("promo_wa_option")}: ${quoteTitle}` : null,
+      quoteForm.name ? `${t("promo_wa_name")}: ${quoteForm.name}` : null,
+      quoteForm.phone ? `${t("promo_wa_phone")}: ${quoteForm.phone}` : null,
+      quoteForm.date ? `${t("promo_wa_date")}: ${quoteForm.date}` : null,
+      quoteForm.guests ? `${t("promo_wa_guests")}: ${quoteForm.guests}` : null,
+      quoteForm.message ? `${t("promo_wa_message")}: ${quoteForm.message}` : null,
     ]
       .filter(Boolean)
       .join("\n");
@@ -604,12 +634,12 @@ const Promociones = () => {
           >
             <div className="promotions-copy">
               <p className="promotions-kicker promotions-kicker--secret" onClick={handleSecretOpen}>
-                {highlight.eyebrow}
+                {t('promo_hl_eyebrow')}
               </p>
               <h2 className="promotions-title">
-                {highlight.title}
+                {t('promo_hl_title')}
               </h2>
-              <p className="promotions-description">{highlight.description}</p>
+              <p className="promotions-description">{t('promo_hl_desc')}</p>
 
               <div className="promotions-actions">
                 <a href="#contact" className="btn-primary">
@@ -625,11 +655,11 @@ const Promociones = () => {
               <div className="promotions-highlight-top">
                 <span className="promotions-chip">
                   <Sparkles size={16} />
-                  {highlight.badgePrimary}
+                  {t('promo_hl_badge1')}
                 </span>
                 <span className="promotions-chip promotions-chip--soft">
                   <BadgePercent size={16} />
-                  {highlight.badgeSecondary}
+                  {t('promo_hl_badge2')}
                 </span>
               </div>
 
@@ -639,16 +669,16 @@ const Promociones = () => {
                 <p className="promotions-highlight-description">{featuredPromotionDescription}</p>
                 <div className="promotions-stat-row">
                   <div>
-                    <strong>{highlight.statOneLabel}</strong>
-                    <span>{highlight.statOneValue}</span>
+                    <strong>{t('promo_hl_stat1_label')}</strong>
+                    <span>{t('promo_hl_stat1_value')}</span>
                   </div>
                   <div>
-                    <strong>{highlight.statTwoLabel}</strong>
-                    <span>{highlight.statTwoValue}</span>
+                    <strong>{t('promo_hl_stat2_label')}</strong>
+                    <span>{t('promo_hl_stat2_value')}</span>
                   </div>
                   <div>
-                    <strong>{highlight.statThreeLabel}</strong>
-                    <span>{highlight.statThreeValue}</span>
+                    <strong>{t('promo_hl_stat3_label')}</strong>
+                    <span>{t('promo_hl_stat3_value')}</span>
                   </div>
                 </div>
               </div>
@@ -673,7 +703,7 @@ const Promociones = () => {
                         className="promotions-grid-arrow promotions-grid-arrow--left"
                         onClick={() => scrollPromotions(-1)}
                         disabled={!canScrollPromotionsLeft}
-                        aria-label="Ver promociones anteriores"
+                        aria-label={t('promo_prev')}
                       >
                         <ChevronLeft size={20} />
                       </button>
@@ -682,7 +712,7 @@ const Promociones = () => {
                         className="promotions-grid-arrow promotions-grid-arrow--right"
                         onClick={() => scrollPromotions(1)}
                         disabled={!canScrollPromotionsRight}
-                        aria-label="Ver siguientes promociones"
+                        aria-label={t('promo_next')}
                       >
                         <ChevronRight size={20} />
                       </button>
@@ -695,7 +725,7 @@ const Promociones = () => {
                   {visibleOrderedPromotions.map((promotion, index) => {
                     const Icon = getPromotionIcon(promotion.type);
                     const isFeatured = promotion.id === featuredPromotionId;
-                    const highlightChip = getPromotionHighlightChip(promotion.type);
+                    const highlightChip = getPromotionHighlightChip(promotion.type, t);
 
                     return (
                       <motion.article
@@ -713,7 +743,7 @@ const Promociones = () => {
                           {isFeatured && (
                             <span className="promotion-card-featured-badge">
                               <Star size={13} />
-                              Destacada
+                              {t('promo_featured_badge')}
                             </span>
                           )}
                         </div>
@@ -726,13 +756,13 @@ const Promociones = () => {
                           <div className="promotion-meta-row">
                             <span className="promotion-meta-pill">
                               <CalendarDays size={14} />
-                              {getPromotionScheduleLabel(promotion)}
+                              {getPromotionScheduleLabel(promotion, t, lang)}
                             </span>
                           </div>
                           <button
                             type="button"
                             className="promotion-cta-button"
-                            onClick={() => openQuoteModal("promotion", promotion.title)}
+                            onClick={() => openQuoteModal("promotion", promotion)}
                           >
                             {t('promo_book')}
                           </button>
@@ -760,7 +790,7 @@ const Promociones = () => {
                   <div className={`promotions-package-grid ${packages.length === 1 ? "promotions-package-grid--single" : ""}`}>
                     {packages.map((pkg) => (
                       <div className="promotion-package-card" key={pkg.id}>
-                        <span className="promotion-package-kicker">Paquete</span>
+                        <span className="promotion-package-kicker">{t('promo_package_kicker')}</span>
                         <CalendarDays size={18} />
                         <h4>{pkg.title}</h4>
                         <strong>{pkg.price}</strong>
@@ -772,7 +802,7 @@ const Promociones = () => {
                         <button
                           type="button"
                           className="promotion-cta-button promotion-cta-button--package"
-                          onClick={() => openQuoteModal("package", pkg.title)}
+                          onClick={() => openQuoteModal("package", pkg)}
                         >
                           {t('promo_book')}
                         </button>
@@ -794,10 +824,10 @@ const Promociones = () => {
             transition={{ duration: 0.55 }}
           >
             <p className="promotions-kicker promotions-kicker--secret" onClick={handleSecretOpen}>
-              PROMOCIONES
+              {t('promo_section')}
             </p>
-            <h3>No hay ofertas o promociones disponibles por el momento</h3>
-            <p>Estamos preparando nuevas opciones para ti. Vuelve pronto para ver promociones actualizadas.</p>
+            <h3>{t('promo_empty_title')}</h3>
+            <p>{t('promo_empty_text')}</p>
           </motion.div>
         )}
 
@@ -882,7 +912,7 @@ const Promociones = () => {
                       className={`promotions-editor-list-item ${promotion.id === selectedPromotionId ? "active" : ""} ${promotion.id === featuredPromotionId ? "featured" : ""}`}
                       onClick={() => setSelectedPromotionId(promotion.id)}
                     >
-                      <img src={promotion.image} alt={promotion.title} />
+                      <img src={promotion.image} alt={promotion.title || t('gallery_default_alt')} />
                       <span>
                         <strong>{promotion.title}</strong>
                         <span
@@ -908,7 +938,7 @@ const Promociones = () => {
                           <Star size={14} />
                           {promotion.id === featuredPromotionId ? "Destacada" : "Destacar"}
                         </span>
-                        <small>{promotion.type} | {getPromotionScheduleLabel(promotion)}</small>
+                        <small>{promotion.type} | {getPromotionScheduleLabel(promotion, t, lang)}</small>
                       </span>
                     </button>
                   ))}
@@ -1032,11 +1062,11 @@ const Promociones = () => {
                     <div className="promotions-editor-preview">
                       <h4>Vista previa</h4>
                       <div className="promotions-editor-preview-card">
-                        <img src={selectedPromotion.image} alt={selectedPromotion.title} />
+                        <img src={selectedPromotion.image} alt={selectedPromotion.title || t('gallery_default_alt')} />
                         <div>
                           <span>{selectedPromotion.type}</span>
                           <strong>{selectedPromotion.title}</strong>
-                          <p>{getPromotionScheduleLabel(selectedPromotion)}</p>
+                          <p>{getPromotionScheduleLabel(selectedPromotion, t, lang)}</p>
                         </div>
                       </div>
                     </div>
@@ -1117,48 +1147,48 @@ const Promociones = () => {
 
       {quoteModalOpen && (
         <div className="promotions-quote-overlay" onClick={closeQuoteModal}>
-          <div className="promotions-quote-card" onClick={(event) => event.stopPropagation()}>
+          <div className="promotions-quote-card" key={`quote-${lang}`} onClick={(event) => event.stopPropagation()}>
             <div className="promotions-quote-header">
               <div>
-                <p className="promotions-editor-kicker">Solicitud rapida</p>
+                <p className="promotions-editor-kicker">{t('promo_quote_kicker')}</p>
                 <h3>{quoteContext.type === "package" ? t('promo_quote_pkg') : t('promo_quote_promo')}</h3>
-                <p className="promotions-quote-helper">{quoteContext.title}</p>
+                <p className="promotions-quote-helper">{quoteTitle}</p>
               </div>
               <button type="button" className="promotions-editor-close" onClick={closeQuoteModal} aria-label={t('promo_close_form')}>
                 <X size={18} />
               </button>
             </div>
 
-            <form className="promotions-quote-form" onSubmit={submitQuoteToWhatsApp}>
+            <form className="promotions-quote-form" lang={lang} onSubmit={submitQuoteToWhatsApp}>
               <label>
-                <span>Nombre</span>
+                <span>{t('promo_quote_name')}</span>
                 <input type="text" value={quoteForm.name} onChange={(event) => updateQuoteField("name", event.target.value)} required />
               </label>
               <label>
-                <span>Telefono</span>
+                <span>{t('promo_quote_phone')}</span>
                 <input type="tel" value={quoteForm.phone} onChange={(event) => updateQuoteField("phone", event.target.value)} />
               </label>
               <label>
-                <span>Fecha deseada</span>
-                <input type="date" min={todayInputValue} value={quoteForm.date} onChange={(event) => updateQuoteField("date", event.target.value)} />
+                <span>{t('promo_quote_date')}</span>
+                <input type="date" lang={lang} min={todayInputValue} value={quoteForm.date} onChange={(event) => updateQuoteField("date", event.target.value)} />
               </label>
               <label>
-                <span>Numero de personas</span>
+                <span>{t('promo_quote_guests')}</span>
                 <input type="number" min="1" value={quoteForm.guests} onChange={(event) => updateQuoteField("guests", event.target.value)} />
               </label>
               <label className="promotions-quote-field-wide">
-                <span>Mensaje</span>
+                <span>{t('promo_quote_message')}</span>
                 <textarea
                   rows={4}
                   value={quoteForm.message}
                   onChange={(event) => updateQuoteField("message", event.target.value)}
-                  placeholder="Cuéntanos que necesitas para tu reserva o cotizacion."
+                  placeholder={t('promo_quote_placeholder')}
                 />
               </label>
 
               <div className="promotions-quote-actions">
                 <button type="button" className="promotions-editor-button secondary" onClick={closeQuoteModal}>
-                  Cancelar
+                  {t('promo_cancel')}
                 </button>
                 <button type="submit" className="promotions-editor-button primary">
                   {t('promo_send_whatsapp')}

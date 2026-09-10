@@ -10,7 +10,7 @@ const GOOGLE_REVIEWS = [
     name: 'Lorenzo C',
     rating: 5,
     initials: 'LC',
-    photo: '/imagenes/clientes/resena-destacada.png',
+    photo: '/imagenes/clientes/resena-destacada.webp',
     metaKey: 'test_lorenzo_meta',
     quoteKey: 'test_lorenzo_quote',
   },

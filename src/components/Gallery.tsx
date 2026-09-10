@@ -4,24 +4,24 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useTranslation } from "../i18n";
 import "../assets/css/style.css";
 import { apiUrl } from "../api";
-import { handlePublicImageError, normalizePublicImageUrl } from "../utils/mediaUrl";
+import { handlePublicImageError, galleryAltKeyForSrc, imageAlt, optimizedImageUrl } from "../utils/mediaUrl";
 
 function Gallery() {
   const { t } = useTranslation();
   const AUTO_SCROLL_DURATION_MS = 46000;
   const [galleryImages, setGalleryImages] = useState([
-    { src: "/imagenes/local/lugar1.jpg", alt: "Interior del café" },
-    { src: "/imagenes/local/lugar2.jpg", alt: "Ambiente acogedor" },
-    { src: "/imagenes/local/lugar3.jpg", alt: "Mesas y decoración" },
-    { src: "/imagenes/local/lugar4.jpg", alt: "Preparación de café" },
-    { src: "/imagenes/local/lugar5.jpg", alt: "Detalles del local" },
-    { src: "/imagenes/local/lugar6.jpg", alt: "Espacio familiar" },
-    { src: "/imagenes/clientes/resena-destacada.png", alt: "Reseña destacada de una clienta" },
-    { src: "/imagenes/clientes/cliente1.jpg", alt: "Reseña de cliente 1" },
-    { src: "/imagenes/clientes/cliente2.jpg", alt: "Reseña de cliente 2" },
-    { src: "/imagenes/clientes/cliente3.jpg", alt: "Reseña de cliente 3" },
-    { src: "/imagenes/clientes/cliente4.jpg", alt: "Reseña de cliente 4" },
-    { src: "/imagenes/clientes/cliente5.jpg", alt: "Reseña de cliente 5" },
+    { src: "/imagenes/local/lugar1.webp", altKey: "gallery_alt_interior" },
+    { src: "/imagenes/local/lugar2.webp", altKey: "gallery_alt_cozy" },
+    { src: "/imagenes/local/lugar3.webp", altKey: "gallery_alt_tables" },
+    { src: "/imagenes/local/lugar4.webp", altKey: "gallery_alt_coffee" },
+    { src: "/imagenes/local/lugar5.webp", altKey: "gallery_alt_details" },
+    { src: "/imagenes/local/lugar6.webp", altKey: "gallery_alt_family" },
+    { src: "/imagenes/clientes/resena-destacada.webp", altKey: "gallery_alt_review_featured" },
+    { src: "/imagenes/clientes/cliente1.webp", altKey: "gallery_alt_review_1" },
+    { src: "/imagenes/clientes/cliente2.webp", altKey: "gallery_alt_review_2" },
+    { src: "/imagenes/clientes/cliente3.webp", altKey: "gallery_alt_review_3" },
+    { src: "/imagenes/clientes/cliente4.webp", altKey: "gallery_alt_review_4" },
+    { src: "/imagenes/clientes/cliente5.webp", altKey: "gallery_alt_review_5" },
   ]);
 
   useEffect(() => {
@@ -29,10 +29,14 @@ function Gallery() {
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
-          setGalleryImages(data.map(item => ({
-            src: normalizePublicImageUrl(item.url_imagen),
-            alt: item.titulo || t('gallery_default_alt')
-          })));
+          setGalleryImages(data.map(item => {
+            const src = optimizedImageUrl(item.url_imagen);
+            return {
+              src,
+              alt: item.titulo || '',
+              altKey: galleryAltKeyForSrc(src),
+            };
+          }));
         }
       })
       .catch(err => console.warn('Usando imágenes por defecto para la galería.', err));
@@ -54,6 +58,11 @@ function Gallery() {
 
   const isOpen = selectedIndex !== null;
   const currentImage = isOpen ? galleryImages[selectedIndex] : null;
+  const resolveAlt = (img) => {
+    const key = img.altKey || galleryAltKeyForSrc(img.src);
+    if (key) return t(key);
+    return imageAlt(img.alt, t('gallery_default_alt'));
+  };
 
   const openViewer = (index) => {
     setSelectedIndex(index);
@@ -200,21 +209,21 @@ function Gallery() {
                 }}
                 aria-label={`${t('gallery_open')} ${idx + 1}`}
               >
-                <img src={img.src} alt={img.alt} className="carousel-image" loading="lazy" onError={handlePublicImageError} />
+                <img src={img.src} alt={resolveAlt(img)} className="carousel-image" loading="lazy" onError={handlePublicImageError} />
                 <span className="carousel-badge">{t('gallery_view')}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="gallery-carousel-dots" aria-label="Indicadores de imagen">
+        <div className="gallery-carousel-dots" aria-label={t('gallery_indicators')}>
           {galleryImages.map((img, index) => (
             <button
               key={`${img.src}-carousel-dot`}
               type="button"
               className={index === activeCarouselIndex ? "gallery-dot active" : "gallery-dot"}
               onClick={() => openViewer(index)}
-              aria-label={`${t('gallery_go')} ${index + 1} de ${galleryImages.length}`}
+              aria-label={`${t('gallery_go')} ${index + 1} ${t('gallery_of')} ${galleryImages.length}`}
               aria-pressed={index === activeCarouselIndex}
             />
           ))}
@@ -233,7 +242,7 @@ function Gallery() {
             </button>
 
             <div className="gallery-lightbox-image-wrap">
-              <img src={currentImage.src} alt={currentImage.alt} className="gallery-lightbox-image" onError={handlePublicImageError} />
+              <img src={currentImage.src} alt={resolveAlt(currentImage)} className="gallery-lightbox-image" onError={handlePublicImageError} />
             </div>
 
             <button type="button" className="gallery-nav-button next" onClick={goNext} aria-label={t('gallery_next')}>
@@ -241,7 +250,7 @@ function Gallery() {
             </button>
 
             <div className="gallery-lightbox-caption">
-              <p>{currentImage.alt}</p>
+              <p>{resolveAlt(currentImage)}</p>
               <span>
                 {selectedIndex + 1} / {galleryImages.length}
               </span>
@@ -256,7 +265,7 @@ function Gallery() {
                   onClick={() => setSelectedIndex(index)}
                   aria-label={`${t('gallery_go')} ${index + 1}`}
                 >
-                  <img src={img.src} alt={img.alt} onError={handlePublicImageError} />
+                  <img src={img.src} alt={resolveAlt(img)} onError={handlePublicImageError} />
                 </button>
               ))}
             </div>

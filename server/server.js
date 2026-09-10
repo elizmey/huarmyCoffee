@@ -15,7 +15,6 @@ const { buildFunctionPoints } = require('./functionPoints');
 const { pedidosRouter } = require('./pedidos');
 const {
   FALLBACK_SERVICIOS,
-  FALLBACK_PROMOCIONES,
   FALLBACK_GALERIA,
   orFallback,
   withNormalizedImages,
@@ -596,10 +595,10 @@ app.get('/api/public/promociones', async (_, res) => {
     const { rows } = await pool.query(
       'SELECT * FROM promociones WHERE activo = true ORDER BY fecha_inicio DESC NULLS LAST, id ASC'
     );
-    res.json(orFallback(rows, FALLBACK_PROMOCIONES));
+    res.json(rows);
   } catch (e) {
     console.error('Error al cargar promociones públicas:', e);
-    res.json(FALLBACK_PROMOCIONES);
+    res.json([]);
   }
 });
 

@@ -29,6 +29,13 @@ export const home: TranslationMap = {
     de: 'Unsere Geschichte',
     pt: 'Nossa História',
   },
+  home_hero_alt: {
+    es: 'Ambiente del restaurante Huarmy Coffee en Quito',
+    en: 'Huarmy Coffee restaurant atmosphere in Quito',
+    fr: 'Ambiance du restaurant Huarmy Coffee à Quito',
+    de: 'Atmosphäre des Restaurants Huarmy Coffee in Quito',
+    pt: 'Ambiente do restaurante Huarmy Coffee em Quito',
+  },
   home_btn_ubicacion: {
     es: 'Ver ubicación',
     en: 'View location',
